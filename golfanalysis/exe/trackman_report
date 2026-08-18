@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require_relative "../lib/trackman_report"
+
+url = ARGV[0]
+out = ARGV[1]
+
+if url.nil? || out.nil?
+  warn "Usage: trackman_report <dynamic-report-url> <output.csv> [--with-trajectories]"
+  exit 1
+end
+
+TrackmanReport.to_csv(url, out, include_trajectories: ARGV.include?("--with-trajectories"))
+puts "Wrote #{out}"
