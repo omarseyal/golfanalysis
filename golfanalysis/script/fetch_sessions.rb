@@ -42,6 +42,21 @@ def median(values)
   sorted.size.odd? ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2.0
 end
 
+# Linear-interpolation percentile (matches Excel PERCENTILE.INC / numpy default).
+def percentile(values, p)
+  return nil if values.empty?
+
+  sorted = values.sort
+  return sorted.first if sorted.size == 1
+
+  rank = (p / 100.0) * (sorted.size - 1)
+  lower = rank.floor
+  upper = rank.ceil
+  return sorted[lower] if lower == upper
+
+  sorted[lower] + (sorted[upper] - sorted[lower]) * (rank - lower)
+end
+
 # Sample variance (n-1); nil when fewer than 2 shots.
 def variance(values)
   return nil if values.size < 2
@@ -103,10 +118,16 @@ deduped.each_with_index do |url, i|
     clubs = rows.group_by { |r| r["club"] }.map do |club, club_rows|
       averages = AVG_FIELDS.each_with_object({}) do |(field, label), h|
         values = numeric_values(club_rows, field)
-        h[label] = { mean: mean(values), median: median(values) }
+        h[label] = {
+          mean: mean(values),
+          median: median(values),
+          p25: percentile(values, 25),
+          p75: percentile(values, 75)
+        }
       end
 
       side_vals = numeric_values(club_rows, "measurement_total_side")
+      abs_side_vals = side_vals.map(&:abs)
       f2p_vals = numeric_values(club_rows, "measurement_face_to_path")
       path_vals = numeric_values(club_rows, "measurement_club_path")
 
@@ -114,6 +135,10 @@ deduped.each_with_index do |url, i|
         side_variance: variance(side_vals),
         side_abs_avg_miss: (mean(side_vals) ? mean(side_vals).abs : nil),
         side_abs_median_miss: (median(side_vals) ? median(side_vals).abs : nil),
+        side_miss_distance_mean: mean(abs_side_vals),
+        side_miss_distance_p25: percentile(abs_side_vals, 25),
+        side_miss_distance_p50: percentile(abs_side_vals, 50),
+        side_miss_distance_p75: percentile(abs_side_vals, 75),
         f2p_variance: variance(f2p_vals),
         f2p_avg: mean(f2p_vals),
         f2p_median: median(f2p_vals),
@@ -163,16 +188,19 @@ ok.each do |s|
 end
 
 md << "\n## Per-Club Averages\n\n"
-md << "Each cell is Mean / Median.\n\n"
+md << "Each cell is Mean / Median. Carry and Smash Factor also show the 25th-75th percentile range.\n\n"
 ok.each do |s|
   md << "### #{s[:date]} — #{s[:facility]} (`#{s[:report_id]}`)\n\n"
-  md << "| Club | Shots | Club Speed | Ball Speed | Smash Factor | Carry | Total |\n"
-  md << "|---|---|---|---|---|---|---|\n"
+  md << "| Club | Shots | Club Speed | Ball Speed | Smash Factor | Smash Factor P25-P75 | Carry | Carry P25-P75 | Total |\n"
+  md << "|---|---|---|---|---|---|---|---|---|\n"
   fmt = ->(v) { v.nil? ? "-" : format("%.1f", v) }
   stat = ->(h) { "#{fmt.call(h[:mean])} / #{fmt.call(h[:median])}" }
+  iqr = ->(h) { "#{fmt.call(h[:p25])} - #{fmt.call(h[:p75])}" }
   s[:clubs].each do |c|
     a = c[:averages]
-    md << "| #{c[:club]} | #{c[:shots]} | #{stat.call(a['Club Speed'])} | #{stat.call(a['Ball Speed'])} | #{stat.call(a['Smash Factor'])} | #{stat.call(a['Carry'])} | #{stat.call(a['Total'])} |\n"
+    md << "| #{c[:club]} | #{c[:shots]} | #{stat.call(a['Club Speed'])} | #{stat.call(a['Ball Speed'])} | " \
+          "#{stat.call(a['Smash Factor'])} | #{iqr.call(a['Smash Factor'])} | " \
+          "#{stat.call(a['Carry'])} | #{iqr.call(a['Carry'])} | #{stat.call(a['Total'])} |\n"
   end
   md << "\n"
 end
@@ -196,6 +224,23 @@ ok.each do |s|
     md << "| #{c[:club]} | #{c[:shots]} | #{fmt.call(d[:side_variance])} | #{side_miss} | " \
           "#{fmt.call(d[:f2p_variance])} | #{f2p} | #{pct.call(d[:f2p_pct_in_range])} | " \
           "#{fmt.call(d[:path_variance])} | #{path} | #{pct.call(d[:path_pct_in_range])} |\n"
+  end
+  md << "\n"
+end
+
+md << "\n## Per-Club Absolute Side Miss Distance\n\n"
+md << "Side miss uses Total Side (yards). Each shot's miss is taken as an absolute value " \
+      "before averaging, so a foot left and a foot right both count the same.\n\n"
+ok.each do |s|
+  md << "### #{s[:date]} — #{s[:facility]} (`#{s[:report_id]}`)\n\n"
+  md << "| Club | Shots | Mean | P25 | P50 (Median) | P75 |\n"
+  md << "|---|---|---|---|---|---|\n"
+  fmt = ->(v) { v.nil? ? "-" : format("%.1f", v) }
+  s[:clubs].each do |c|
+    d = c[:dispersion]
+    md << "| #{c[:club]} | #{c[:shots]} | #{fmt.call(d[:side_miss_distance_mean])} | " \
+          "#{fmt.call(d[:side_miss_distance_p25])} | #{fmt.call(d[:side_miss_distance_p50])} | " \
+          "#{fmt.call(d[:side_miss_distance_p75])} |\n"
   end
   md << "\n"
 end
