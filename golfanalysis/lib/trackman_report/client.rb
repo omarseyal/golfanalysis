@@ -50,8 +50,8 @@ module TrackmanReport
         h[k] = v
       end
 
-      report_id = params["r"]
-      raise InvalidUrlError, "URL is missing the report id (`r` query param): #{url}" if report_id.nil? || report_id.empty?
+      report_id = params["r"] || params["ReportId"]
+      raise InvalidUrlError, "URL is missing the report id (`r` or `ReportId` query param): #{url}" if report_id.nil? || report_id.empty?
 
       normalization = {
         altitude: params["nd_altitude"]&.to_f,

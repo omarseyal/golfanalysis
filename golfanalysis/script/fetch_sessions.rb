@@ -72,7 +72,8 @@ def pct_in_range(values, lo, hi)
 end
 
 def report_id_from_url(url)
-  URI.decode_www_form(URI.parse(url).query.to_s).to_h["r"]
+  params = URI.decode_www_form(URI.parse(url).query.to_s).to_h
+  params["r"] || params["ReportId"]
 end
 
 urls = File.readlines(urls_file, chomp: true).reject(&:empty?)
