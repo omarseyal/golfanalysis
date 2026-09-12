@@ -24,52 +24,7 @@ AVG_FIELDS = {
   "measurement_total" => "Total"
 }.freeze
 
-def numeric_values(rows, field)
-  rows.map { |r| r[field] }.compact.map(&:to_f)
-end
-
-def mean(values)
-  return nil if values.empty?
-
-  values.sum / values.size
-end
-
-def median(values)
-  return nil if values.empty?
-
-  sorted = values.sort
-  mid = sorted.size / 2
-  sorted.size.odd? ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2.0
-end
-
-# Linear-interpolation percentile (matches Excel PERCENTILE.INC / numpy default).
-def percentile(values, p)
-  return nil if values.empty?
-
-  sorted = values.sort
-  return sorted.first if sorted.size == 1
-
-  rank = (p / 100.0) * (sorted.size - 1)
-  lower = rank.floor
-  upper = rank.ceil
-  return sorted[lower] if lower == upper
-
-  sorted[lower] + (sorted[upper] - sorted[lower]) * (rank - lower)
-end
-
-# Sample variance (n-1); nil when fewer than 2 shots.
-def variance(values)
-  return nil if values.size < 2
-
-  m = mean(values)
-  values.sum { |v| (v - m)**2 } / (values.size - 1)
-end
-
-def pct_in_range(values, lo, hi)
-  return nil if values.empty?
-
-  100.0 * values.count { |v| v >= lo && v <= hi } / values.size
-end
+Stats = TrackmanReport::Stats
 
 def report_id_from_url(url)
   params = URI.decode_www_form(URI.parse(url).query.to_s).to_h
@@ -118,36 +73,36 @@ deduped.each_with_index do |url, i|
 
     clubs = rows.group_by { |r| r["club"] }.map do |club, club_rows|
       averages = AVG_FIELDS.each_with_object({}) do |(field, label), h|
-        values = numeric_values(club_rows, field)
+        values = Stats.numeric_values(club_rows, field)
         h[label] = {
-          mean: mean(values),
-          median: median(values),
-          p25: percentile(values, 25),
-          p75: percentile(values, 75)
+          mean: Stats.mean(values),
+          median: Stats.median(values),
+          p25: Stats.percentile(values, 25),
+          p75: Stats.percentile(values, 75)
         }
       end
 
-      side_vals = numeric_values(club_rows, "measurement_total_side")
+      side_vals = Stats.numeric_values(club_rows, "measurement_total_side")
       abs_side_vals = side_vals.map(&:abs)
-      f2p_vals = numeric_values(club_rows, "measurement_face_to_path")
-      path_vals = numeric_values(club_rows, "measurement_club_path")
+      f2p_vals = Stats.numeric_values(club_rows, "measurement_face_to_path")
+      path_vals = Stats.numeric_values(club_rows, "measurement_club_path")
 
       dispersion = {
-        side_variance: variance(side_vals),
-        side_abs_avg_miss: (mean(side_vals) ? mean(side_vals).abs : nil),
-        side_abs_median_miss: (median(side_vals) ? median(side_vals).abs : nil),
-        side_miss_distance_mean: mean(abs_side_vals),
-        side_miss_distance_p25: percentile(abs_side_vals, 25),
-        side_miss_distance_p50: percentile(abs_side_vals, 50),
-        side_miss_distance_p75: percentile(abs_side_vals, 75),
-        f2p_variance: variance(f2p_vals),
-        f2p_avg: mean(f2p_vals),
-        f2p_median: median(f2p_vals),
-        f2p_pct_in_range: pct_in_range(f2p_vals, -3, 1),
-        path_variance: variance(path_vals),
-        path_avg: mean(path_vals),
-        path_median: median(path_vals),
-        path_pct_in_range: pct_in_range(path_vals, -2, 2)
+        side_variance: Stats.variance(side_vals),
+        side_abs_avg_miss: (Stats.mean(side_vals) ? Stats.mean(side_vals).abs : nil),
+        side_abs_median_miss: (Stats.median(side_vals) ? Stats.median(side_vals).abs : nil),
+        side_miss_distance_mean: Stats.mean(abs_side_vals),
+        side_miss_distance_p25: Stats.percentile(abs_side_vals, 25),
+        side_miss_distance_p50: Stats.percentile(abs_side_vals, 50),
+        side_miss_distance_p75: Stats.percentile(abs_side_vals, 75),
+        f2p_variance: Stats.variance(f2p_vals),
+        f2p_avg: Stats.mean(f2p_vals),
+        f2p_median: Stats.median(f2p_vals),
+        f2p_pct_in_range: Stats.pct_in_range(f2p_vals, -3, 1),
+        path_variance: Stats.variance(path_vals),
+        path_avg: Stats.mean(path_vals),
+        path_median: Stats.median(path_vals),
+        path_pct_in_range: Stats.pct_in_range(path_vals, -2, 2)
       }
 
       { club: club, shots: club_rows.size, averages: averages, dispersion: dispersion }

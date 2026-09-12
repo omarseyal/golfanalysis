@@ -3,6 +3,7 @@ require_relative "trackman_report/client"
 require_relative "trackman_report/flatten"
 require_relative "trackman_report/parser"
 require_relative "trackman_report/csv_writer"
+require_relative "trackman_report/stats"
 
 module TrackmanReport
   # Fetches a dynamic-report URL and returns one row (Hash) per shot.
