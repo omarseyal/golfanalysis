@@ -37,10 +37,10 @@ METRICS = {
   face_to_path: { field: "measurement_face_to_path", label: "Face to Path", unit: "°", decimals: 1 },
   path: { field: "measurement_club_path", label: "Club Path", unit: "°", decimals: 1 },
   f2p_in_range: {
-    field: "measurement_face_to_path", label: "F2P % in [-3, +1]", unit: "%", decimals: 0, range: [-3, 1]
+    field: "measurement_face_to_path", label: "Good Face to Path", unit: "%", decimals: 0, range: [-3, 1]
   },
   path_in_range: {
-    field: "measurement_club_path", label: "Path % in [-2, +2]", unit: "%", decimals: 0, range: [-2, 2]
+    field: "measurement_club_path", label: "Good Path", unit: "%", decimals: 0, range: [-2, 2]
   }
 }.freeze
 
