@@ -14,10 +14,20 @@ bin/rails db:create db:migrate
 bin/rails server
 ```
 
-Ruby 3.2.2 (see `.ruby-version`), SQLite, no Node/JS build step (plain forms,
-no JS framework). Reuses `TrackmanReport` from `../lib` directly — see the
-`require_relative` in `config/application.rb` — rather than duplicating the
-fetch/parse/stats code.
+Ruby 3.2.2 (see `.ruby-version`), SQLite locally / Postgres in production, no
+Node/JS build step (plain forms, no JS framework).
+
+`lib/trackman_report` is a **vendored copy** of `../lib/trackman_report` (see
+the `require_relative` in `config/application.rb`) — not a symlink or a
+require of the sibling directory — so this app is self-contained and
+deployable on its own (Heroku's `git subtree push` only ships this
+directory, not its siblings). If you change the fetch/parse/stats logic in
+`../lib`, copy it over here too:
+
+```
+rm -rf lib/trackman_report lib/trackman_report.rb
+cp -r ../lib/trackman_report.rb ../lib/trackman_report lib/
+```
 
 ## Web UI
 

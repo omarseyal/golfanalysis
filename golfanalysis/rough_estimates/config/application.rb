@@ -18,9 +18,12 @@ require "rails/test_unit/railtie"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-# Reuse the TrackMan fetch/parse/stats library from the repo root (../lib)
-# instead of duplicating it inside the Rails app.
-require_relative "../../lib/trackman_report"
+# TrackmanReport lives at lib/trackman_report — a vendored copy of the
+# ../lib library at the golfanalysis repo root, kept in sync by hand. It's
+# copied in (rather than require_relative'd from ../../lib) so this app is
+# self-contained and deployable on its own: `git subtree push` (Heroku) and
+# most PaaS git deploys only ship this directory, not its siblings.
+require_relative "../lib/trackman_report"
 
 module RoughEstimates
   class Application < Rails::Application
@@ -30,7 +33,11 @@ module RoughEstimates
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    # trackman_report is ignored here because it's require_relative'd above,
+    # eagerly, before Zeitwerk sets up — and its version.rb sets a VERSION
+    # constant Zeitwerk's inflector would otherwise expect to be a Version
+    # class/module.
+    config.autoload_lib(ignore: %w[assets tasks trackman_report.rb trackman_report])
 
     # Configuration for the application, engines, and railties goes here.
     #
