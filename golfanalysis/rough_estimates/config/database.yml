@@ -20,12 +20,9 @@ test:
   <<: *default
   database: storage/test.sqlite3
 
-# SQLite3 write its data on the local filesystem, as such it requires
-# persistent disks. If you are deploying to a managed service, you should
-# make sure it provides disk persistence, as many don't.
-#
-# Similarly, if you deploy your application as a Docker container, you must
-# ensure the database is located in a persisted volume.
+# Heroku Postgres (via the DATABASE_URL it sets) rather than SQLite: the
+# dyno filesystem is ephemeral, so SQLite's data wouldn't survive a restart.
 production:
-  <<: *default
-  # database: path/to/persistent/storage/production.sqlite3
+  adapter: postgresql
+  url: <%= ENV["DATABASE_URL"] %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>

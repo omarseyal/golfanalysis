@@ -141,6 +141,13 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
+    pg (1.6.3)
+    pg (1.6.3-aarch64-linux)
+    pg (1.6.3-aarch64-linux-musl)
+    pg (1.6.3-arm64-darwin)
+    pg (1.6.3-x86_64-darwin)
+    pg (1.6.3-x86_64-linux)
+    pg (1.6.3-x86_64-linux-musl)
     pp (0.6.4)
       prettyprint
     prettyprint (0.2.0)
@@ -240,11 +247,15 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   debug
   json (~> 2.9)
+  pg (~> 1.5)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)
   sqlite3 (>= 2.1)
   tzinfo-data
+
+RUBY VERSION
+   ruby 3.2.2p53
 
 BUNDLED WITH
    2.6.3
