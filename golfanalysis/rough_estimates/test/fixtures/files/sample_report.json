@@ -1,0 +1,104 @@
+{
+  "Id": "report-1",
+  "Time": "2026-01-01T00:00:00+00:00",
+  "Updated": "2026-01-01T00:05:00+00:00",
+  "Environment": {
+    "Altitude": 0.0,
+    "Temperature": 20.0,
+    "Location": { "Latitude": 1.0, "Longitude": 2.0 }
+  },
+  "Client": {
+    "Name": "TrackMan Performance Studio",
+    "Version": "10.0.0",
+    "OperatingSystem": "Test OS",
+    "DeviceId": "device-1"
+  },
+  "Groups": [
+    { "Id": "facility-1", "Kind": "Facility:2", "Name": "Test Range" },
+    { "Id": "bay-1", "Kind": "Bay", "Name": "Bay 1" }
+  ],
+  "StrokeGroups": [
+    {
+      "Date": "2026-01-01",
+      "Club": "7Iron",
+      "Ball": "Premium",
+      "Target": "",
+      "Player": { "Id": "player-1", "Name": "Test Player", "Gender": "Male" },
+      "Tags": ["practice"],
+      "Strokes": [
+        {
+          "Id": "stroke-1",
+          "Time": "2026-01-01T00:00:01+00:00",
+          "Club": "7Iron",
+          "Ball": "Premium",
+          "ImpactLocation": { "ImpactOffset": 0.01, "ImpactHeight": 0.02, "DynamicLie": 1.0 },
+          "Measurement": {
+            "Id": "stroke-1",
+            "Time": "2026-01-01T00:00:01+00:00",
+            "Kind": "Measurement",
+            "ClubSpeed": 30.0,
+            "BallSpeed": 40.0,
+            "SmashFactor": 1.33,
+            "Carry": 100.0,
+            "Total": 110.0,
+            "BallTrajectory": [{ "X": 0.0, "Y": 0.0, "Z": 0.0 }, { "X": 1.0, "Y": 1.0, "Z": 1.0 }]
+          },
+          "NormalizedMeasurement": {
+            "Id": "stroke-1",
+            "Time": "2026-01-01T00:00:01+00:00",
+            "Kind": "Normalized",
+            "ClubSpeed": 30.5,
+            "Carry": 101.0
+          },
+          "Videos": [
+            { "Angle": "DL", "Uri": "https://example.com/dl.mov" }
+          ]
+        },
+        {
+          "Id": "stroke-2",
+          "Time": "2026-01-01T00:00:05+00:00",
+          "Club": "7Iron",
+          "Ball": "Premium",
+          "ImpactLocation": { "ImpactOffset": -0.01, "ImpactHeight": 0.01, "DynamicLie": 1.1 },
+          "Measurement": {
+            "Id": "stroke-2",
+            "Time": "2026-01-01T00:00:05+00:00",
+            "Kind": "Measurement",
+            "ClubSpeed": 31.0,
+            "BallSpeed": 41.0,
+            "SmashFactor": 1.32,
+            "Carry": 102.0,
+            "Total": 112.0
+          }
+        }
+      ]
+    },
+    {
+      "Date": "2026-01-01",
+      "Club": "Driver",
+      "Ball": "Premium",
+      "Target": "",
+      "Player": { "Id": "player-1", "Name": "Test Player", "Gender": "Male" },
+      "Tags": [],
+      "Strokes": [
+        {
+          "Id": "stroke-3",
+          "Time": "2026-01-01T00:00:03+00:00",
+          "Club": "Driver",
+          "Ball": "Premium",
+          "ImpactLocation": { "ImpactOffset": 0.0, "ImpactHeight": 0.0, "DynamicLie": 0.5 },
+          "Measurement": {
+            "Id": "stroke-3",
+            "Time": "2026-01-01T00:00:03+00:00",
+            "Kind": "Measurement",
+            "ClubSpeed": 45.0,
+            "BallSpeed": 65.0,
+            "SmashFactor": 1.44,
+            "Carry": 220.0,
+            "Total": 240.0
+          }
+        }
+      ]
+    }
+  ]
+}

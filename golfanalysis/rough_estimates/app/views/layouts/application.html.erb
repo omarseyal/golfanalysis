@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Rough estimates" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Rough estimates">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app %>
+  </head>
+
+  <body>
+    <% if logged_in? %>
+      <nav class="topbar">
+        <%= link_to "Rough estimates", root_path, class: "brand" %>
+        <div class="links">
+          <%= link_to "Sessions", trackman_sessions_path, class: ("active" if current_page?(trackman_sessions_path) || current_page?(root_path)) %>
+          <%= link_to "Summary", summary_path, class: ("active" if current_page?(summary_path)) %>
+          <%= link_to "Progress", progress_path, class: ("active" if current_page?(progress_path)) %>
+          <%= link_to "Account", account_path, class: ("active" if current_page?(account_path)) %>
+          <span class="muted"><%= current_user.email %></span>
+          <%= button_to "Log out", logout_path, method: :delete, class: "link-button", form: { style: "display:inline" } %>
+        </div>
+      </nav>
+    <% end %>
+
+    <div class="flash">
+      <% flash.each do |type, message| %>
+        <div class="<%= type == "notice" ? "notice" : "alert" %>"><%= message %></div>
+      <% end %>
+    </div>
+
+    <%= yield %>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+<% content_for :title, "Progress — Rough estimates" %>
+
+<div class="wrap stack">
+  <div class="legend">
+    <span class="item"><span class="swatch" style="background:var(--p75)"></span>P75</span>
+    <span class="item"><span class="swatch" style="background:var(--p50)"></span>P50 (median)</span>
+    <span class="item"><span class="swatch" style="background:var(--p25)"></span>P25</span>
+    <span>Shaded band = P25-P75 spread. Distance: higher and tighter is better. Side miss: lower and tighter is better.
+      Smash Factor: higher and tighter is better. Face to Path / Club Path: tighter around your target number is better.
+      Hover a point for exact values.</span>
+  </div>
+
+  <% if @progress.empty? %>
+    <div class="card">
+      <p class="empty-state">No sessions yet. <%= link_to "Add one", trackman_sessions_path %> to see progress charts.</p>
+    </div>
+  <% else %>
+    <% @progress.each do |club, entries| %>
+      <div class="club">
+        <h2><%= club %></h2>
+        <p class="meta">
+          <%= entries.size %> session(s) · <%= entries.sum { |e| e[:shots] } %> shots ·
+          <%= entries.first[:date] %> → <%= entries.last[:date] %>
+        </p>
+        <div class="charts">
+          <% ClubProgress::METRICS.each do |key, cfg| %>
+            <div class="chart-card">
+              <h3><%= cfg[:label] %></h3>
+              <%= progress_chart(entries, key, cfg[:unit], decimals: cfg[:decimals], single: !!cfg[:range]) %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>

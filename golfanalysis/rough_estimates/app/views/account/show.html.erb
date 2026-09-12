@@ -1,0 +1,53 @@
+<% content_for :title, "Account — Rough estimates" %>
+
+<div class="wrap stack">
+  <div class="card">
+    <h2>Profile</h2>
+    <%= form_with model: current_user, url: account_path, method: :patch do |f| %>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" value="<%= current_user.email %>" disabled>
+      </div>
+      <div class="field">
+        <%= f.label :name %>
+        <%= f.text_field :name %>
+      </div>
+      <div class="field">
+        <%= f.label :player_name, "TrackMan player name" %>
+        <%= f.text_field :player_name, placeholder: "e.g. Omar Seyal" %>
+        <p class="muted" style="margin:4px 0 0;font-size:11px;">
+          Only shots by this exact player name are imported from new sessions. Leave blank to import everyone's.
+        </p>
+      </div>
+      <%= f.submit "Save" %>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h2>API key</h2>
+    <p class="muted" style="margin-top:0">Give this to an agent so it can add sessions and read your data on your behalf.</p>
+    <div class="api-key">
+      <code class="mono"><%= current_user.api_key %></code>
+      <%= button_to "Regenerate", account_regenerate_api_key_path, method: :post, class: "button secondary",
+            form: { onsubmit: "return confirm('Old key stops working immediately. Continue?')" } %>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Agent / API access</h2>
+    <p class="muted" style="margin-top:0">
+      Base URL: <code class="mono"><%= request.base_url %></code> &middot;
+      Auth header: <code class="mono">Authorization: Bearer &lt;api_key&gt;</code>
+    </p>
+    <pre class="endpoint-list">GET    /api/v1              index of endpoints
+GET    /api/v1/me           current user
+GET    /api/v1/sessions     list your sessions
+POST   /api/v1/sessions     {"url": "&lt;trackman link&gt;"}  — add a session (idempotent)
+GET    /api/v1/sessions/:id session metadata + every raw shot (JSON)
+GET    /api/v1/sessions/:id.csv   same shots as CSV
+DELETE /api/v1/sessions/:id remove a session
+GET    /api/v1/summary      per-club averages & dispersion, per session
+GET    /api/v1/progress     per-club P25/P50/P75 series across sessions</pre>
+    <p class="muted">Example: <code class="mono">curl -H "Authorization: Bearer <%= current_user.api_key %>" <%= request.base_url %>/api/v1/progress</code></p>
+  </div>
+</div>

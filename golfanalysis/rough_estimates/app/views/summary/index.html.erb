@@ -1,0 +1,45 @@
+<% content_for :title, "Summary — Rough estimates" %>
+
+<div class="wrap stack">
+  <div class="card">
+    <h2>Sessions</h2>
+    <% if @trackman_sessions.empty? %>
+      <p class="empty-state">No sessions yet. <%= link_to "Add one", trackman_sessions_path %>.</p>
+    <% else %>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Facility</th><th>Bay</th><th>Player</th><th>Total shots</th><th>Clubs</th></tr>
+          </thead>
+          <tbody>
+            <% @trackman_sessions.each do |session| %>
+              <tr>
+                <td><%= link_to session.session_date, trackman_session_path(session) %></td>
+                <td><%= session.facility %></td>
+                <td><%= session.bay %></td>
+                <td><%= session.player_name %></td>
+                <td><%= session.shot_count %></td>
+                <td>
+                  <% clubs = @club_summaries[session] %>
+                  <%= clubs.map { |c| "#{c[:club]} (#{c[:shots]})" }.join(", ") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
+  <% @trackman_sessions.each do |session| %>
+    <div class="card">
+      <h2><%= session.session_date %> — <%= session.facility %> <span class="muted"><code class="mono"><%= session.report_id %></code></span></h2>
+
+      <h3 style="margin-top:16px">Per-club averages</h3>
+      <%= render "shared/club_averages_table", clubs: @club_summaries[session] %>
+
+      <h3 style="margin-top:20px">Per-club dispersion &amp; face/path consistency</h3>
+      <%= render "shared/club_dispersion_table", clubs: @club_summaries[session] %>
+    </div>
+  <% end %>
+</div>

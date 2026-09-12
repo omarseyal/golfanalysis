@@ -1,0 +1,155 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5;
+  --card-bg: #ffffff;
+  --text: #1a1a1a;
+  --muted: #6b6b6b;
+  --border: #e3e2df;
+  --grid: #e9e8e5;
+  --accent: #2f6fb0;
+  --accent-text: #ffffff;
+  --danger: #b3492f;
+  --p25: #9fc4e8;
+  --p75: #f2b5a0;
+  --p50: #2f6fb0;
+  --band: rgba(80, 140, 200, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a;
+    --card-bg: #1f2023;
+    --text: #f0f0ef;
+    --muted: #9a9a97;
+    --border: #34353a;
+    --grid: #2c2d31;
+    --accent: #7fb8ff;
+    --accent-text: #0f1115;
+    --danger: #e08a68;
+    --p25: #6ea6d8;
+    --p75: #e08a68;
+    --p50: #7fb8ff;
+    --band: rgba(127, 184, 255, 0.16);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font: 13px/1.5 Helvetica, Arial, sans-serif;
+  padding-bottom: 48px;
+}
+
+a { color: var(--accent); }
+
+h1, h2, h3, h4 { font-family: Helvetica, Arial, sans-serif; font-weight: 700; }
+h1 { font-size: 18px; margin: 0; }
+h2 { font-size: 15px; margin: 0 0 2px; }
+h3 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--muted); }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+/* --- nav --- */
+nav.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 14px 16px; margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+nav.topbar .brand { font-weight: 700; font-size: 15px; text-decoration: none; color: var(--text); }
+nav.topbar .links { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+nav.topbar .links a { text-decoration: none; color: var(--muted); font-size: 12.5px; }
+nav.topbar .links a:hover, nav.topbar .links a.active { color: var(--text); }
+nav.topbar form { display: inline; }
+nav.topbar button.link-button { font-size: 12.5px; }
+
+/* --- flashes --- */
+.flash { max-width: 1100px; margin: 0 auto 16px; padding: 0 16px; }
+.flash .notice, .flash .alert {
+  padding: 8px 12px; border-radius: 6px; font-size: 12.5px; margin-bottom: 8px;
+}
+.flash .notice { background: var(--band); color: var(--text); }
+.flash .alert { background: rgba(179, 73, 47, 0.12); color: var(--danger); }
+
+/* --- cards / tables --- */
+.card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 20px;
+}
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+.table-scroll { overflow-x: auto; }
+.empty-state { color: var(--muted); font-size: 12.5px; padding: 8px 0; }
+
+/* --- forms --- */
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+input[type="text"], input[type="email"], input[type="password"], input[type="url"] {
+  font: inherit; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card-bg); color: var(--text); width: 100%;
+}
+.field { margin-bottom: 12px; }
+.field-error { color: var(--danger); font-size: 11.5px; margin-top: 3px; }
+.form-errors { background: rgba(179, 73, 47, 0.1); color: var(--danger); border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; }
+.inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.inline-form .field { margin-bottom: 0; flex: 1 1 320px; }
+
+button, .button {
+  font: inherit; font-size: 12.5px; padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text);
+  text-decoration: none; display: inline-block;
+}
+button.secondary, .button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+button.danger, .button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+button.link-button { background: none; border: none; color: var(--muted); padding: 0; text-decoration: underline; }
+
+.narrow { max-width: 360px; margin: 40px auto; }
+.narrow .card { margin-bottom: 0; }
+.muted { color: var(--muted); }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.stack > * + * { margin-top: 20px; }
+.actions-row { display: flex; gap: 8px; align-items: center; }
+
+/* --- club progress / summary charts --- */
+.club { margin-bottom: 28px; }
+.club .meta { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+.charts {
+  display: flex; flex-wrap: nowrap; gap: 16px;
+  overflow-x: auto; padding-bottom: 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+}
+.chart-card {
+  flex: 0 0 340px; width: 340px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px 6px;
+}
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.grid { stroke: var(--grid); stroke-width: 1; }
+.ytick, .xtick { fill: var(--muted); font-size: 9px; }
+.band { fill: var(--band); stroke: none; }
+.line { stroke-width: 1.5; }
+.line.p50 { stroke: var(--p50); stroke-width: 2.5; }
+.line.p25 { stroke: var(--p25); stroke-dasharray: 3 3; }
+.line.p75 { stroke: var(--p75); stroke-dasharray: 3 3; }
+.dot.p50 { fill: var(--p50); }
+.dot.p25 { fill: var(--p25); }
+.dot.p75 { fill: var(--p75); }
+.empty { color: var(--muted); font-size: 12.5px; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 24px; padding: 10px 14px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12px; color: var(--muted);
+}
+.legend span.item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+
+/* --- api key --- */
+.api-key { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.api-key code { padding: 6px 10px; background: var(--grid); border-radius: 6px; }
+pre.endpoint-list { font-size: 12px; overflow-x: auto; background: var(--grid); padding: 12px; border-radius: 8px; }

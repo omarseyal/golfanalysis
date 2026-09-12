@@ -1,0 +1,45 @@
+<% content_for :title, "Sign up — Rough estimates" %>
+
+<div class="narrow">
+  <div class="card stack">
+    <h1>Rough estimates</h1>
+    <p class="muted">Create an account to track your TrackMan sessions.</p>
+
+    <%= form_with model: @user, url: signup_path, method: :post do |f| %>
+      <% if @user.errors.any? %>
+        <div class="form-errors">
+          <%= @user.errors.full_messages.to_sentence %>
+        </div>
+      <% end %>
+
+      <div class="field">
+        <%= f.label :email %>
+        <%= f.email_field :email, required: true, autofocus: true %>
+      </div>
+      <div class="field">
+        <%= f.label :name, "Name (optional)" %>
+        <%= f.text_field :name %>
+      </div>
+      <div class="field">
+        <%= f.label :player_name, "TrackMan player name (optional)" %>
+        <%= f.text_field :player_name, placeholder: "e.g. Omar Seyal" %>
+        <p class="muted" style="margin:4px 0 0;font-size:11px;">
+          If your bay is shared with someone else, set this to your exact TrackMan player name
+          so only your shots get imported. Leave blank to import everyone's.
+        </p>
+      </div>
+      <div class="field">
+        <%= f.label :password %>
+        <%= f.password_field :password, required: true %>
+      </div>
+      <div class="field">
+        <%= f.label :password_confirmation, "Confirm password" %>
+        <%= f.password_field :password_confirmation %>
+      </div>
+
+      <%= f.submit "Sign up" %>
+    <% end %>
+
+    <p class="muted">Already have an account? <%= link_to "Log in", login_path %></p>
+  </div>
+</div>

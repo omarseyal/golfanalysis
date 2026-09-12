@@ -1,0 +1,47 @@
+<% content_for :title, "Sessions — Rough estimates" %>
+
+<div class="wrap stack">
+  <div class="card">
+    <h2>Add a session</h2>
+    <p class="muted" style="margin-top:0">Paste a TrackMan dynamic-report link (the kind you'd get shared after a range session).</p>
+    <%= form_with url: trackman_sessions_path, method: :post, class: "inline-form" do |f| %>
+      <div class="field">
+        <%= f.label :url, "TrackMan link" %>
+        <%= f.url_field :url, required: true, placeholder: "https://web-dynamic-reports.trackmangolf.com/?r=..." %>
+      </div>
+      <%= f.submit "Add session" %>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h2>Your sessions</h2>
+    <% if @trackman_sessions.empty? %>
+      <p class="empty-state">No sessions yet — add one above.</p>
+    <% else %>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Facility</th><th>Bay</th><th>Shots</th><th>Clubs</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @trackman_sessions.each do |session| %>
+              <tr>
+                <td><%= link_to session.session_date, trackman_session_path(session) %></td>
+                <td><%= session.facility %></td>
+                <td><%= session.bay %></td>
+                <td><%= session.shot_count %></td>
+                <td><%= session.clubs.join(", ") %></td>
+                <td>
+                  <%= button_to "Delete", trackman_session_path(session), method: :delete,
+                        class: "link-button", form: { onsubmit: "return confirm('Delete this session?')" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>

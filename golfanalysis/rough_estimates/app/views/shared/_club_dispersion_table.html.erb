@@ -1,0 +1,56 @@
+<%# locals: clubs (ClubSummary.for_session output) %>
+<p class="muted" style="margin-top:0">
+  Side miss uses Total Side (yards, +right/-left). Face-to-Path and Path are in degrees.
+  "% in range" is the share of shots with Face-to-Path between -3 and +1 degrees,
+  or Path between -2 and +2 degrees. Miss/Avg/Path cells are Mean / Median (Side Miss shown as absolute value).
+</p>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Club</th><th>Shots</th><th>Side Var</th><th>|Side Miss|</th>
+        <th>F2P Var</th><th>F2P</th><th>F2P % in [-3,+1]</th>
+        <th>Path Var</th><th>Path</th><th>Path % in [-2,+2]</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% clubs.each do |c| %>
+        <% d = c[:dispersion] %>
+        <tr>
+          <td><%= c[:club] %></td>
+          <td><%= c[:shots] %></td>
+          <td><%= fmt(d[:side_variance]) %></td>
+          <td><%= fmt(d[:side_abs_avg_miss]) %> / <%= fmt(d[:side_abs_median_miss]) %></td>
+          <td><%= fmt(d[:f2p_variance]) %></td>
+          <td><%= fmt(d[:f2p_avg]) %> / <%= fmt(d[:f2p_median]) %></td>
+          <td><%= pct(d[:f2p_pct_in_range]) %></td>
+          <td><%= fmt(d[:path_variance]) %></td>
+          <td><%= fmt(d[:path_avg]) %> / <%= fmt(d[:path_median]) %></td>
+          <td><%= pct(d[:path_pct_in_range]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h3 style="margin-top:16px">Absolute side miss distance</h3>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Club</th><th>Shots</th><th>Mean</th><th>P25</th><th>P50 (Median)</th><th>P75</th></tr>
+    </thead>
+    <tbody>
+      <% clubs.each do |c| %>
+        <% d = c[:dispersion] %>
+        <tr>
+          <td><%= c[:club] %></td>
+          <td><%= c[:shots] %></td>
+          <td><%= fmt(d[:side_miss_distance_mean]) %></td>
+          <td><%= fmt(d[:side_miss_distance_p25]) %></td>
+          <td><%= fmt(d[:side_miss_distance_p50]) %></td>
+          <td><%= fmt(d[:side_miss_distance_p75]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

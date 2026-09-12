@@ -1,0 +1,27 @@
+<%# locals: clubs (ClubSummary.for_session output) %>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Club</th><th>Shots</th><th>Club Speed</th><th>Ball Speed</th>
+        <th>Smash</th><th>Smash P25-P75</th><th>Carry</th><th>Carry P25-P75</th><th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% clubs.each do |c| %>
+        <% a = c[:averages] %>
+        <tr>
+          <td><%= c[:club] %></td>
+          <td><%= c[:shots] %></td>
+          <td><%= stat_pair(a["Club Speed"]) %></td>
+          <td><%= stat_pair(a["Ball Speed"]) %></td>
+          <td><%= stat_pair(a["Smash Factor"]) %></td>
+          <td><%= iqr_pair(a["Smash Factor"]) %></td>
+          <td><%= stat_pair(a["Carry"]) %></td>
+          <td><%= iqr_pair(a["Carry"]) %></td>
+          <td><%= stat_pair(a["Total"]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

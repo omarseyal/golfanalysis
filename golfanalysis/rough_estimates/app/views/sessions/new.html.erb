@@ -1,0 +1,21 @@
+<% content_for :title, "Log in — Rough estimates" %>
+
+<div class="narrow">
+  <div class="card stack">
+    <h1>Rough estimates</h1>
+
+    <%= form_with url: login_path, method: :post do |f| %>
+      <div class="field">
+        <%= f.label :email %>
+        <%= f.email_field :email, required: true, autofocus: true %>
+      </div>
+      <div class="field">
+        <%= f.label :password %>
+        <%= f.password_field :password, required: true %>
+      </div>
+      <%= f.submit "Log in" %>
+    <% end %>
+
+    <p class="muted">No account yet? <%= link_to "Sign up", signup_path %></p>
+  </div>
+</div>

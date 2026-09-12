@@ -1,0 +1,61 @@
+<% content_for :title, "#{@trackman_session.session_date} — Rough estimates" %>
+
+<div class="wrap stack">
+  <div class="card">
+    <div class="actions-row" style="justify-content:space-between">
+      <div>
+        <h2><%= @trackman_session.session_date %> — <%= @trackman_session.facility %></h2>
+        <p class="meta">
+          Bay <%= @trackman_session.bay %> · <%= @trackman_session.player_name %> ·
+          <%= @trackman_session.shot_count %> shots · report <code class="mono"><%= @trackman_session.report_id %></code>
+        </p>
+      </div>
+      <div class="actions-row">
+        <%= link_to "Download raw CSV", trackman_session_path(@trackman_session, format: :csv), class: "button secondary" %>
+        <%= button_to "Delete session", trackman_session_path(@trackman_session), method: :delete,
+              class: "button danger", form: { onsubmit: "return confirm('Delete this session?')" } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Per-club averages</h2>
+    <p class="muted" style="margin-top:0">Mean / median. Carry &amp; Smash Factor also show the 25th-75th percentile range.</p>
+    <%= render "shared/club_averages_table", clubs: @clubs %>
+  </div>
+
+  <% @shots_by_club.sort_by { |club, _| club.to_s }.each do |club, shots| %>
+    <div class="card">
+      <h2><%= club %> <span class="muted">(<%= shots.size %> shots)</span></h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Total</th><th>Side</th><th>Carry</th><th>Smash</th>
+              <th>Club Spd</th><th>Ball Spd</th><th>F2P</th><th>Path</th><th>Attack</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% shots.sort_by { |s| s.session_shot_number.to_i }.each do |shot| %>
+              <tr>
+                <td><%= shot.shot_number %></td>
+                <td><%= number_with_precision(shot.total, precision: 1) if shot.total %></td>
+                <td><%= number_with_precision(shot.total_side, precision: 1) if shot.total_side %></td>
+                <td><%= number_with_precision(shot.carry, precision: 1) if shot.carry %></td>
+                <td><%= number_with_precision(shot.smash_factor, precision: 2) if shot.smash_factor %></td>
+                <td><%= number_with_precision(shot.club_speed, precision: 1) if shot.club_speed %></td>
+                <td><%= number_with_precision(shot.ball_speed, precision: 1) if shot.ball_speed %></td>
+                <td><%= number_with_precision(shot.face_to_path, precision: 1) if shot.face_to_path %></td>
+                <td><%= number_with_precision(shot.club_path, precision: 1) if shot.club_path %></td>
+                <td><%= number_with_precision(shot.attack_angle, precision: 1) if shot.attack_angle %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <p class="muted">Need every TrackMan field for these shots (spin, launch, trajectory, etc.)? Use "Download raw CSV" above, or
+    <code class="mono">GET /api/v1/sessions/<%= @trackman_session.id %></code> for JSON.</p>
+</div>
