@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
 # Reads the per-session CSVs written by fetch_sessions.rb and renders a
 # self-contained HTML page (no network access or JS libraries required) with
-# one progress chart per club: the 25th/50th/75th percentile of Total
-# distance, and of absolute side miss (|Total Side|), one point per session,
-# ordered chronologically. Each chart shows the median as a line with the
-# P25-P75 band shaded around it.
+# progress charts per club: the 25th/50th/75th percentile of Total distance,
+# absolute side miss (|Total Side|), Smash Factor, Face to Path, and Club
+# Path, one point per session, ordered chronologically. Each chart shows the
+# median as a line with the P25-P75 band shaded around it. See METRICS below
+# to add or remove charts.
 #
 # Usage: ruby script/plot_progress.rb [sessions_dir] [output_html]
 
@@ -23,6 +24,17 @@ CLUB_ORDER = %w[
   1Iron 2Iron 3Iron 4Iron 5Iron 6Iron 7Iron 8Iron 9Iron
   PitchingWedge GapWedge SandWedge LobWedge Putter
 ].freeze
+
+# Each chart plotted per club, in display order. `field` is the CSV column;
+# `abs` takes the absolute value first (for side miss); `unit`/`decimals`
+# control axis and tooltip formatting.
+METRICS = {
+  distance: { field: "measurement_total", label: "Total Distance", unit: " yd", decimals: 0 },
+  miss: { field: "measurement_total_side", label: "Absolute Side Miss", unit: " yd", decimals: 0, abs: true },
+  smash: { field: "measurement_smash_factor", label: "Smash Factor", unit: "", decimals: 2 },
+  face_to_path: { field: "measurement_face_to_path", label: "Face to Path", unit: "°", decimals: 1 },
+  path: { field: "measurement_club_path", label: "Club Path", unit: "°", decimals: 1 }
+}.freeze
 
 def club_sort_key(club)
   idx = CLUB_ORDER.index(club)
@@ -47,34 +59,22 @@ csv_files.each do |path|
   end
 end
 
-# club => chronologically sorted array of { report_id:, date:, shots:, distance: {p25,p50,p75}, miss: {p25,p50,p75} }
+# club => chronologically sorted array of { report_id:, date:, shots:, <metric key>: {p25,p50,p75}, ... }
 progress = by_club.each_with_object({}) do |(club, sessions_by_id), h|
   entries = sessions_by_id.map do |report_id, session|
     rows = session[:rows]
-    distance_vals = Stats.numeric_values(rows, "measurement_total")
-    miss_vals = Stats.numeric_values(rows, "measurement_total_side").map(&:abs)
-    smash_vals = Stats.numeric_values(rows, "measurement_smash_factor")
 
-    {
-      report_id: report_id,
-      date: session[:date],
-      shots: rows.size,
-      distance: {
-        p25: Stats.percentile(distance_vals, 25),
-        p50: Stats.percentile(distance_vals, 50),
-        p75: Stats.percentile(distance_vals, 75)
-      },
-      miss: {
-        p25: Stats.percentile(miss_vals, 25),
-        p50: Stats.percentile(miss_vals, 50),
-        p75: Stats.percentile(miss_vals, 75)
-      },
-      smash: {
-        p25: Stats.percentile(smash_vals, 25),
-        p50: Stats.percentile(smash_vals, 50),
-        p75: Stats.percentile(smash_vals, 75)
+    percentiles = METRICS.each_with_object({}) do |(key, cfg), out|
+      vals = Stats.numeric_values(rows, cfg[:field])
+      vals = vals.map(&:abs) if cfg[:abs]
+      out[key] = {
+        p25: Stats.percentile(vals, 25),
+        p50: Stats.percentile(vals, 50),
+        p75: Stats.percentile(vals, 75)
       }
-    }
+    end
+
+    { report_id: report_id, date: session[:date], shots: rows.size }.merge(percentiles)
   end
 
   h[club] = entries.sort_by { |e| [e[:date], e[:report_id]] }
@@ -166,23 +166,21 @@ sections = clubs.map do |club|
   last_date = entries.last[:date]
   total_shots = entries.sum { |e| e[:shots] }
 
+  cards = METRICS.map do |key, cfg|
+    <<~CARD
+      <div class="chart-card">
+        <h3>#{CGI.escapeHTML(cfg[:label])}</h3>
+        #{line_chart(entries, key, cfg[:unit], decimals: cfg[:decimals])}
+      </div>
+    CARD
+  end.join
+
   <<~HTML
     <section class="club">
       <h2>#{CGI.escapeHTML(club)}</h2>
       <p class="meta">#{entries.size} session(s) · #{total_shots} shots · #{CGI.escapeHTML(first_date)} → #{CGI.escapeHTML(last_date)}</p>
       <div class="charts">
-        <div class="chart-card">
-          <h3>Total Distance (yards)</h3>
-          #{line_chart(entries, :distance, " yd", decimals: 0)}
-        </div>
-        <div class="chart-card">
-          <h3>Absolute Side Miss (yards)</h3>
-          #{line_chart(entries, :miss, " yd", decimals: 0)}
-        </div>
-        <div class="chart-card">
-          <h3>Smash Factor</h3>
-          #{line_chart(entries, :smash, "", decimals: 2)}
-        </div>
+        #{cards}
       </div>
     </section>
   HTML
@@ -274,7 +272,7 @@ html = <<~HTML
         <span><span class="swatch" style="background:var(--p75)"></span>P75</span>
         <span><span class="swatch" style="background:var(--p50)"></span>P50 (median)</span>
         <span><span class="swatch" style="background:var(--p25)"></span>P25</span>
-        <span>Shaded band = P25-P75 spread. Distance: higher and tighter is better. Side miss: lower and tighter is better. Smash Factor: higher and tighter is better. Hover a point for exact values.</span>
+        <span>Shaded band = P25-P75 spread. Distance: higher and tighter is better. Side miss: lower and tighter is better. Smash Factor: higher and tighter is better. Face to Path / Club Path: tighter around your target number is better. Hover a point for exact values.</span>
       </div>
       #{sections}
     </div>
