@@ -5,6 +5,7 @@ Rails.application.routes.draw do
   post "signup", to: "registrations#create"
   get "login", to: "sessions#new"
   post "login", to: "sessions#create"
+  get "demo", to: "demo#enter"
   delete "logout", to: "sessions#destroy"
 
   resources :trackman_sessions, only: %i[index create show destroy]
