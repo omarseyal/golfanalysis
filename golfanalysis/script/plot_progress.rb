@@ -27,13 +27,21 @@ CLUB_ORDER = %w[
 
 # Each chart plotted per club, in display order. `field` is the CSV column;
 # `abs` takes the absolute value first (for side miss); `unit`/`decimals`
-# control axis and tooltip formatting.
+# control axis and tooltip formatting. `range: [lo, hi]` makes it a "% of
+# shots in range" chart (a single value per session) instead of a P25/P50/P75
+# percentile chart.
 METRICS = {
   distance: { field: "measurement_total", label: "Total Distance", unit: " yd", decimals: 0 },
   miss: { field: "measurement_total_side", label: "Absolute Side Miss", unit: " yd", decimals: 0, abs: true },
   smash: { field: "measurement_smash_factor", label: "Smash Factor", unit: "", decimals: 2 },
   face_to_path: { field: "measurement_face_to_path", label: "Face to Path", unit: "°", decimals: 1 },
-  path: { field: "measurement_club_path", label: "Club Path", unit: "°", decimals: 1 }
+  path: { field: "measurement_club_path", label: "Club Path", unit: "°", decimals: 1 },
+  f2p_in_range: {
+    field: "measurement_face_to_path", label: "F2P % in [-3, +1]", unit: "%", decimals: 0, range: [-3, 1]
+  },
+  path_in_range: {
+    field: "measurement_club_path", label: "Path % in [-2, +2]", unit: "%", decimals: 0, range: [-2, 2]
+  }
 }.freeze
 
 def club_sort_key(club)
@@ -67,11 +75,15 @@ progress = by_club.each_with_object({}) do |(club, sessions_by_id), h|
     percentiles = METRICS.each_with_object({}) do |(key, cfg), out|
       vals = Stats.numeric_values(rows, cfg[:field])
       vals = vals.map(&:abs) if cfg[:abs]
-      out[key] = {
-        p25: Stats.percentile(vals, 25),
-        p50: Stats.percentile(vals, 50),
-        p75: Stats.percentile(vals, 75)
-      }
+      out[key] = if cfg[:range]
+                   { p50: Stats.pct_in_range(vals, *cfg[:range]) }
+                 else
+                   {
+                     p25: Stats.percentile(vals, 25),
+                     p50: Stats.percentile(vals, 50),
+                     p75: Stats.percentile(vals, 75)
+                   }
+                 end
     end
 
     { report_id: report_id, date: session[:date], shots: rows.size }.merge(percentiles)
@@ -91,8 +103,8 @@ PAD_R = 16
 PAD_T = 16
 PAD_B = 34
 
-def line_chart(entries, metric, unit, decimals: 1)
-  plottable = entries.select { |e| e[metric][:p25] && e[metric][:p50] && e[metric][:p75] }
+def line_chart(entries, metric, unit, decimals: 1, single: false)
+  plottable = entries.select { |e| e[metric][:p50] && (single || (e[metric][:p25] && e[metric][:p75])) }
   return %(<p class="empty">Not enough data yet.</p>) if plottable.size < 2
 
   values = plottable.flat_map { |e| e[metric].values }
@@ -102,6 +114,11 @@ def line_chart(entries, metric, unit, decimals: 1)
   span = 1.0 if span.zero?
   min_v -= span * 0.15
   max_v += span * 0.15
+  if single
+    # percentages: keep the padded band from dipping below 0 or above 100
+    min_v = [min_v, 0.0].max
+    max_v = [max_v, 100.0].min
+  end
 
   n = plottable.size
   plot_w = CHART_W - PAD_L - PAD_R
@@ -129,27 +146,33 @@ def line_chart(entries, metric, unit, decimals: 1)
     svg << %(<text x="#{'%.1f' % x}" y="#{CHART_H - PAD_B + 16}" class="xtick" text-anchor="middle">#{CGI.escapeHTML(e[:date][5..])}</text>)
   end
 
-  # shaded P25-P75 band
-  upper = plottable.each_with_index.map { |e, i| [x_for.call(i), y_for.call(e[metric][:p75])] }
-  lower = plottable.each_with_index.map { |e, i| [x_for.call(i), y_for.call(e[metric][:p25])] }.reverse
-  band_points = (upper + lower).map { |x, y| "#{'%.1f' % x},#{'%.1f' % y}" }.join(" ")
-  svg << %(<polygon points="#{band_points}" class="band"/>)
+  unless single
+    # shaded P25-P75 band
+    upper = plottable.each_with_index.map { |e, i| [x_for.call(i), y_for.call(e[metric][:p75])] }
+    lower = plottable.each_with_index.map { |e, i| [x_for.call(i), y_for.call(e[metric][:p25])] }.reverse
+    band_points = (upper + lower).map { |x, y| "#{'%.1f' % x},#{'%.1f' % y}" }.join(" ")
+    svg << %(<polygon points="#{band_points}" class="band"/>)
 
-  # boundary lines (thin, dashed) + median line (solid, bold)
-  %i[p75 p25].each do |pctl|
-    pts = plottable.each_with_index.map { |e, i| "#{'%.1f' % x_for.call(i)},#{'%.1f' % y_for.call(e[metric][pctl])}" }
-    svg << %(<polyline points="#{pts.join(' ')}" fill="none" class="line #{pctl}"/>)
+    # boundary lines (thin, dashed)
+    %i[p75 p25].each do |pctl|
+      pts = plottable.each_with_index.map { |e, i| "#{'%.1f' % x_for.call(i)},#{'%.1f' % y_for.call(e[metric][pctl])}" }
+      svg << %(<polyline points="#{pts.join(' ')}" fill="none" class="line #{pctl}"/>)
+    end
   end
+
+  # median line (solid, bold) — the only line for a single-value metric
   median_pts = plottable.each_with_index.map { |e, i| "#{'%.1f' % x_for.call(i)},#{'%.1f' % y_for.call(e[metric][:p50])}" }
   svg << %(<polyline points="#{median_pts.join(' ')}" fill="none" class="line p50"/>)
 
-  # dots + tooltips for all three series
-  %i[p25 p50 p75].each do |pctl|
+  # dots + tooltips
+  pctls = single ? %i[p50] : %i[p25 p50 p75]
+  pctls.each do |pctl|
     plottable.each_with_index do |e, i|
       v = e[metric][pctl]
       x = x_for.call(i)
       y = y_for.call(v)
-      label = "#{e[:date]} · #{pctl.to_s.upcase} #{format("%.#{decimals}f", v)}#{unit} · #{e[:shots]} shots"
+      prefix = single ? "" : "#{pctl.to_s.upcase} "
+      label = "#{e[:date]} · #{prefix}#{format("%.#{decimals}f", v)}#{unit} · #{e[:shots]} shots"
       svg << %(<circle cx="#{'%.1f' % x}" cy="#{'%.1f' % y}" r="3.2" class="dot #{pctl}"><title>#{CGI.escapeHTML(label)}</title></circle>)
     end
   end
@@ -170,7 +193,7 @@ sections = clubs.map do |club|
     <<~CARD
       <div class="chart-card">
         <h3>#{CGI.escapeHTML(cfg[:label])}</h3>
-        #{line_chart(entries, key, cfg[:unit], decimals: cfg[:decimals])}
+        #{line_chart(entries, key, cfg[:unit], decimals: cfg[:decimals], single: !!cfg[:range])}
       </div>
     CARD
   end.join
@@ -229,7 +252,7 @@ html = <<~HTML
       color: var(--text);
       font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     }
-    .wrap { max-width: 1360px; margin: 0 auto; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
     h1 { font-size: 22px; margin: 0 0 4px; }
     .subtitle { color: var(--muted); margin: 0 0 20px; font-size: 13px; }
     .legend {
@@ -243,9 +266,12 @@ html = <<~HTML
     .club { margin-bottom: 28px; }
     .club h2 { font-size: 17px; margin: 0 0 2px; }
     .meta { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
-    .charts { display: flex; flex-wrap: wrap; gap: 16px; }
+    .charts {
+      display: flex; flex-wrap: nowrap; gap: 16px;
+      overflow-x: auto; padding-bottom: 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+    }
     .chart-card {
-      flex: 1 1 360px; min-width: 0;
+      flex: 0 0 340px; width: 340px;
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
       padding: 12px 14px 6px;
     }
