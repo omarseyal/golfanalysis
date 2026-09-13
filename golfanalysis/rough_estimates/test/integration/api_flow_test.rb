@@ -51,6 +51,12 @@ class ApiFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     progress = JSON.parse(response.body)
     assert_includes progress.keys, "7Iron"
+
+    get api_v1_shots_path, headers: @headers
+    assert_response :success
+    shots = JSON.parse(response.body)
+    assert_includes shots["clubs"], "7Iron"
+    assert_equal 3, shots["rows"].size
   end
 
   test "session show returns raw shots and supports csv" do

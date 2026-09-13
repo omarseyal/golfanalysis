@@ -47,7 +47,8 @@ GET    /api/v1/sessions/:id session metadata + every raw shot (JSON)
 GET    /api/v1/sessions/:id.csv   same shots as CSV
 DELETE /api/v1/sessions/:id remove a session
 GET    /api/v1/summary      per-club averages & dispersion, per session
-GET    /api/v1/progress     per-club P25/P50/P75 series across sessions</pre>
+GET    /api/v1/progress     per-club P25/P50/P75 series across sessions
+GET    /api/v1/shots        every shot, real-world units -- the Progress dashboard's own dataset</pre>
     <p class="muted">Example: <code class="mono">curl -H "Authorization: Bearer <%= current_user.api_key %>" <%= request.base_url %>/api/v1/progress</code></p>
   </div>
 </div>

@@ -149,6 +149,8 @@ module DemoData
       total = mean_distance + gaussian(std: distance_std)
       smash_factor = (smash_mean + gaussian(std: 0.03)).clamp(0.9, 1.55)
       club_speed = club_speed_mean + gaussian(std: club_speed_mean * 0.04)
+      club_path = path_bias + gaussian(std: path_std)
+      face_to_path = f2p_bias + gaussian(std: f2p_std)
 
       {
         total: total,
@@ -157,8 +159,10 @@ module DemoData
         smash_factor: smash_factor,
         club_speed: club_speed,
         ball_speed: club_speed * smash_factor,
-        face_to_path: f2p_bias + gaussian(std: f2p_std),
-        club_path: path_bias + gaussian(std: path_std),
+        face_to_path: face_to_path,
+        club_path: club_path,
+        # by definition Face-to-Path = Face - Path, so Face = Path + F2P
+        face_angle: club_path + face_to_path,
         attack_angle: attack_mean + gaussian(std: 1.0)
       }
     end
@@ -183,6 +187,7 @@ module DemoData
       "measurement_ball_speed" => row[:ball_speed],
       "measurement_face_to_path" => row[:face_to_path],
       "measurement_club_path" => row[:club_path],
+      "measurement_face_angle" => row[:face_angle],
       "measurement_attack_angle" => row[:attack_angle]
     }
   end

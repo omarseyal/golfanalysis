@@ -14,7 +14,8 @@ module Api
             "GET /api/v1/sessions/:id.csv" => "The same shots as a CSV download.",
             "DELETE /api/v1/sessions/:id" => "Remove a session.",
             "GET /api/v1/summary" => "Per-club averages & dispersion for every session (mirrors the Summary page).",
-            "GET /api/v1/progress" => "Per-club P25/P50/P75 series across sessions, chronological (mirrors the Progress charts)."
+            "GET /api/v1/progress" => "Per-club P25/P50/P75 series across sessions, chronological (lighter aggregate).",
+            "GET /api/v1/shots" => "Every shot, per-club and per-session, real-world units (yd/mph/deg) -- mirrors the Progress dashboard's own dataset."
           }
         }
       end

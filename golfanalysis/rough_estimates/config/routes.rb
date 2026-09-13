@@ -10,7 +10,7 @@ Rails.application.routes.draw do
 
   resources :trackman_sessions, only: %i[index create show destroy]
   get "summary", to: "summary#index"
-  get "progress", to: "progress#index"
+  get "progress", to: "analysis#index"
 
   get "account", to: "account#show"
   patch "account", to: "account#update"
@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       resources :sessions, controller: "trackman_sessions", only: %i[index show create destroy]
       get "summary", to: "summary#index"
       get "progress", to: "progress#index"
+      get "shots", to: "shots#index"
     end
   end
 

@@ -1,4 +1,5 @@
 require_relative "trackman_report/version"
+require_relative "trackman_report/units"
 require_relative "trackman_report/client"
 require_relative "trackman_report/flatten"
 require_relative "trackman_report/parser"

@@ -1,7 +1,8 @@
 # Per-club, per-session percentile series across a user's TrackMan history —
 # the same data script/plot_progress.rb charts, ported to read from Shot
-# records instead of CSV files. Used by both the Progress page (rendered as
-# SVG charts, see ProgressChartHelper) and the JSON API (returned as-is).
+# records instead of CSV files. The web Progress page now uses the richer
+# per-shot Analysis dashboard instead (see AnalysisData), but this remains
+# the lighter-weight aggregate the JSON API (GET /api/v1/progress) returns.
 module ClubProgress
   Stats = TrackmanReport::Stats
 

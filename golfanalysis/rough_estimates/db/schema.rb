@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_055530) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_034319) do
   create_table "shots", force: :cascade do |t|
     t.float "attack_angle"
     t.float "ball_speed"
@@ -19,6 +19,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_055530) do
     t.float "club_path"
     t.float "club_speed"
     t.datetime "created_at", null: false
+    t.float "face_angle"
     t.float "face_to_path"
     t.text "raw", null: false
     t.integer "session_shot_number"

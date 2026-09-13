@@ -55,4 +55,26 @@ class TrackmanIngestorTest < ActiveSupport::TestCase
     assert result.ok?
     assert_equal "test-activity-1", result.session.report_id
   end
+
+  test "stores distance/speed in real-world units, not TrackMan's raw metric ones" do
+    result = TrackmanIngestor.call(user: @user, url: @url, client: FakeTrackmanClient.new)
+
+    shot = result.session.shots.find_by!(club: "7Iron", shot_number: 1)
+    # fixture's raw metric values: ClubSpeed 30 m/s, BallSpeed 40 m/s, Carry 100 m
+    assert_in_delta 30.0 * TrackmanReport::Units::MPS_TO_MPH, shot.club_speed
+    assert_in_delta 40.0 * TrackmanReport::Units::MPS_TO_MPH, shot.ball_speed
+    assert_in_delta 100.0 * TrackmanReport::Units::M_TO_YD, shot.carry
+  end
+
+  test "refresh! re-fetches a session from its own source_url and replaces its shots" do
+    original = TrackmanIngestor.call(user: @user, url: @url, client: FakeTrackmanClient.new).session
+    original_shot_id = original.shots.first.id
+
+    result = TrackmanIngestor.refresh!(original, client: FakeTrackmanClient.new)
+
+    assert result.ok?
+    assert_equal original.id, result.session.id
+    assert_equal 3, result.session.shots.count
+    refute result.session.shots.exists?(original_shot_id), "expected the old shot rows to be replaced"
+  end
 end
