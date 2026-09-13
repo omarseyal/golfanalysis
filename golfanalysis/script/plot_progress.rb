@@ -31,8 +31,8 @@ CLUB_ORDER = %w[
 # shots in range" chart (a single value per session) instead of a P25/P50/P75
 # percentile chart.
 METRICS = {
-  distance: { field: "measurement_total", label: "Total Distance", unit: " yd", decimals: 0 },
-  miss: { field: "measurement_total_side", label: "Absolute Side Miss", unit: " yd", decimals: 0, abs: true },
+  distance: { field: "measurement_total_yd", label: "Total Distance", unit: " yd", decimals: 0 },
+  miss: { field: "measurement_total_side_yd", label: "Absolute Side Miss", unit: " yd", decimals: 0, abs: true },
   smash: { field: "measurement_smash_factor", label: "Smash Factor", unit: "", decimals: 2 },
   face_to_path: { field: "measurement_face_to_path", label: "Face to Path", unit: "°", decimals: 1 },
   path: { field: "measurement_club_path", label: "Club Path", unit: "°", decimals: 1 },

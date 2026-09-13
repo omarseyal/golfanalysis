@@ -17,11 +17,11 @@ Dir.mkdir(sessions_dir) unless Dir.exist?(sessions_dir)
 EXCLUDED_PLAYERS = ["Naureen Seyal"].freeze
 
 AVG_FIELDS = {
-  "measurement_club_speed" => "Club Speed",
-  "measurement_ball_speed" => "Ball Speed",
+  "measurement_club_speed_mph" => "Club Speed",
+  "measurement_ball_speed_mph" => "Ball Speed",
   "measurement_smash_factor" => "Smash Factor",
-  "measurement_carry" => "Carry",
-  "measurement_total" => "Total"
+  "measurement_carry_yd" => "Carry",
+  "measurement_total_yd" => "Total"
 }.freeze
 
 Stats = TrackmanReport::Stats
@@ -87,7 +87,7 @@ deduped.each_with_index do |url, i|
         }
       end
 
-      side_vals = Stats.numeric_values(club_rows, "measurement_total_side")
+      side_vals = Stats.numeric_values(club_rows, "measurement_total_side_yd")
       abs_side_vals = side_vals.map(&:abs)
       f2p_vals = Stats.numeric_values(club_rows, "measurement_face_to_path")
       path_vals = Stats.numeric_values(club_rows, "measurement_club_path")

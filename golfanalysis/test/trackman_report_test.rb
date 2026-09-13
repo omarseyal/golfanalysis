@@ -38,6 +38,17 @@ class TrackmanReportTest < Minitest::Test
     assert_equal 0.01, row["impact_location_impact_offset"]
   end
 
+  def test_adds_yard_and_mph_corrected_fields_alongside_the_raw_metric_ones
+    rows = TrackmanReport::Parser.parse(@report)
+    row = rows.find { |r| r["stroke_id"] == "stroke-1" }
+
+    assert_in_delta 100.0 * 1.09361, row["measurement_carry_yd"]
+    assert_in_delta 30.0 * 2.23694, row["measurement_club_speed_mph"]
+    assert_in_delta 40.0 * 2.23694, row["measurement_ball_speed_mph"]
+    # raw metric values are untouched -- CSV/raw JSON export stays faithful
+    assert_equal 30.0, row["measurement_club_speed"]
+  end
+
   def test_trajectories_excluded_by_default_but_available_on_request
     without = TrackmanReport::Parser.parse(@report)
     row_without = without.find { |r| r["stroke_id"] == "stroke-1" }
