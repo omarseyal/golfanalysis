@@ -14,44 +14,51 @@ module TrackmanReport
   # and call the same endpoint directly.
   class Client
     REPORT_ENDPOINT = "https://golf-player-activities.trackmangolf.com/api/reports/getreport"
+    ACTIVITY_REPORT_ENDPOINT = "https://golf-player-activities.trackmangolf.com/api/reports/getactivityreport"
 
-    def initialize(endpoint: REPORT_ENDPOINT, open_timeout: 10, read_timeout: 30)
+    def initialize(endpoint: REPORT_ENDPOINT, activity_endpoint: ACTIVITY_REPORT_ENDPOINT, open_timeout: 10, read_timeout: 30)
       @endpoint = endpoint
+      @activity_endpoint = activity_endpoint
       @open_timeout = open_timeout
       @read_timeout = read_timeout
     end
 
-    # Fetches raw report data given a full dynamic-report URL, e.g.
-    #   https://web-dynamic-reports.trackmangolf.com/?r=<report-id>&nd_altitude=0&nd_temperature=25&nd_ballType=Premium
+    # Fetches raw report data given a full dynamic-report URL. Handles both
+    # link styles TrackMan hands out:
+    #   ...?r=<report-id>&...    a single report
+    #   ...?a=<activity-id>&...  a "multi group" report covering every
+    #                            stroke group under that activity -- a
+    #                            different API endpoint and payload key, not
+    #                            just an alias for `r`
     #
-    # Returns the parsed JSON response as a Hash.
+    # Returns the parsed JSON response as a Hash (same shape either way:
+    # Parser doesn't need to know which kind of link it came from).
     def fetch_report(url)
-      report_id, normalization = parse_url(url)
-      fetch_report_by_id(report_id, **normalization)
+      id, kind, normalization = parse_url(url)
+
+      case kind
+      when :report then fetch_report_by_id(id, **normalization)
+      when :activity then fetch_activity_report_by_id(id, **normalization)
+      end
     end
 
     # Fetches raw report data by report id directly.
     def fetch_report_by_id(report_id, altitude: nil, temperature: nil, ball_type: nil)
-      payload = {
-        "ReportId" => report_id,
-        "Altitude" => altitude,
-        "Temperature" => temperature,
-        "BallType" => ball_type
-      }.compact
-
-      post_json(@endpoint, payload)
+      post_json(@endpoint, request_payload("ReportId", report_id, altitude, temperature, ball_type))
     end
 
-    private
+    # Fetches raw report data by activity id directly.
+    def fetch_activity_report_by_id(activity_id, altitude: nil, temperature: nil, ball_type: nil)
+      post_json(@activity_endpoint, request_payload("ActivityId", activity_id, altitude, temperature, ball_type))
+    end
 
+    # Parses a dynamic-report URL into [id, kind, normalization], where kind
+    # is :report (from an `r`/`ReportId` param) or :activity (from an `a`
+    # param). Public (rather than the usual leading-underscore-free private
+    # convention) so it can be unit tested without hitting the network.
     def parse_url(url)
       uri = URI.parse(url)
-      params = URI.decode_www_form(uri.query.to_s).each_with_object({}) do |(k, v), h|
-        h[k] = v
-      end
-
-      report_id = params["r"] || params["ReportId"]
-      raise InvalidUrlError, "URL is missing the report id (`r` or `ReportId` query param): #{url}" if report_id.nil? || report_id.empty?
+      params = URI.decode_www_form(uri.query.to_s).each_with_object({}) { |(k, v), h| h[k] = v }
 
       normalization = {
         altitude: params["nd_altitude"]&.to_f,
@@ -59,9 +66,25 @@ module TrackmanReport
         ball_type: params["nd_ballType"]
       }
 
-      [report_id, normalization]
+      report_id = params["r"] || params["ReportId"]
+      activity_id = params["a"]
+
+      if report_id && !report_id.empty?
+        [report_id, :report, normalization]
+      elsif activity_id && !activity_id.empty?
+        [activity_id, :activity, normalization]
+      else
+        raise InvalidUrlError,
+          "URL is missing a report id (`r`/`ReportId`) or activity id (`a`) query param: #{url}"
+      end
     rescue URI::InvalidURIError => e
       raise InvalidUrlError, "Could not parse URL #{url.inspect}: #{e.message}"
+    end
+
+    private
+
+    def request_payload(id_key, id_value, altitude, temperature, ball_type)
+      { id_key => id_value, "Altitude" => altitude, "Temperature" => temperature, "BallType" => ball_type }.compact
     end
 
     def post_json(url, payload)

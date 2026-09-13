@@ -26,15 +26,21 @@ AVG_FIELDS = {
 
 Stats = TrackmanReport::Stats
 
-def report_id_from_url(url)
-  params = URI.decode_www_form(URI.parse(url).query.to_s).to_h
-  params["r"] || params["ReportId"]
+client = TrackmanReport::Client.new
+
+# Handles both link styles TrackMan hands out -- ?r=<report-id> and the
+# "multi group" ?a=<activity-id> -- via Client#parse_url, so a URL's id
+# here always matches what fetch_report will actually fetch.
+def report_id_from_url(client, url)
+  client.parse_url(url).first
+rescue TrackmanReport::InvalidUrlError
+  nil
 end
 
 urls = File.readlines(urls_file, chomp: true).reject(&:empty?)
 seen_report_ids = {}
 deduped = urls.select do |url|
-  id = report_id_from_url(url)
+  id = report_id_from_url(client, url)
   next false unless url.start_with?("https://web-dynamic-reports.trackmangolf.com/")
   next false if seen_report_ids[id]
 
@@ -44,11 +50,10 @@ end
 
 puts "#{urls.size} URLs -> #{deduped.size} unique TrackMan reports"
 
-client = TrackmanReport::Client.new
 sessions = []
 
 deduped.each_with_index do |url, i|
-  report_id = report_id_from_url(url)
+  report_id = report_id_from_url(client, url)
   print "[#{i + 1}/#{deduped.size}] #{report_id} ... "
 
   begin

@@ -31,7 +31,7 @@ class TrackmanIngestor
 
   def call
     report_id = extract_report_id(@url)
-    return failure('That URL does not look like a TrackMan report link (no "r" or "ReportId" parameter found).') unless report_id
+    return failure(@url_error) unless report_id
 
     existing = @user.trackman_sessions.find_by(report_id: report_id)
     return Result.new(session: existing, created: false) if existing
@@ -97,13 +97,15 @@ class TrackmanIngestor
     }
   end
 
+  # Delegates to the client's own URL parsing (which understands both `r`/
+  # `ReportId` report links and `a` activity links) rather than duplicating
+  # it, so "does this URL have an id" and "which id did we actually fetch"
+  # can never disagree.
   def extract_report_id(url)
-    uri = URI.parse(url)
-    return nil unless uri.query
-
-    params = URI.decode_www_form(uri.query).to_h
-    params["r"] || params["ReportId"]
-  rescue URI::InvalidURIError
+    id, = @client.parse_url(url)
+    id
+  rescue TrackmanReport::InvalidUrlError => e
+    @url_error = e.message
     nil
   end
 

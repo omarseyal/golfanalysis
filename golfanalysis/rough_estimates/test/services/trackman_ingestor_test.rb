@@ -46,4 +46,13 @@ class TrackmanIngestorTest < ActiveSupport::TestCase
     refute result.ok?
     assert_match(/report/i, result.error)
   end
+
+  test "also accepts an activity link (?a=...), storing the activity id as report_id" do
+    url = "https://web-dynamic-reports.trackmangolf.com/?a=test-activity-1&dm=c&sgos%5B%5D=test-activity-1"
+
+    result = TrackmanIngestor.call(user: @user, url: url, client: FakeTrackmanClient.new)
+
+    assert result.ok?
+    assert_equal "test-activity-1", result.session.report_id
+  end
 end
