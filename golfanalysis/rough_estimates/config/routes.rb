@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  root "trackman_sessions#index"
+  root "analysis#index"
 
   get "signup", to: "registrations#new"
   post "signup", to: "registrations#create"
