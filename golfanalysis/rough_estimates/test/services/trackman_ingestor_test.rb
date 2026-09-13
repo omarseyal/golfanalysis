@@ -64,6 +64,8 @@ class TrackmanIngestorTest < ActiveSupport::TestCase
     assert_in_delta 30.0 * TrackmanReport::Units::MPS_TO_MPH, shot.club_speed
     assert_in_delta 40.0 * TrackmanReport::Units::MPS_TO_MPH, shot.ball_speed
     assert_in_delta 100.0 * TrackmanReport::Units::M_TO_YD, shot.carry
+    # TotalSide is feet (÷3), not metres like Carry/Total
+    assert_in_delta 15.0 * TrackmanReport::Units::FT_TO_YD, shot.total_side
   end
 
   test "refresh! re-fetches a session from its own source_url and replaces its shots" do

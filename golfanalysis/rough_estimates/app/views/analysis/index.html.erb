@@ -100,16 +100,6 @@ a{color:inherit}
   display:flex;flex-wrap:wrap;gap:0 22px;margin-top:12px}
 .meta b{color:var(--ink-2);font-weight:500}
 
-details.dnote{margin:18px 0 0;border-left:3px solid var(--flag-rule);background:var(--flag-bg);border-radius:0 4px 4px 0}
-details.dnote summary{cursor:pointer;padding:9px 16px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);list-style:none}
-details.dnote summary::-webkit-details-marker{display:none}
-details.dnote summary::before{content:"+ ";opacity:.6}
-details.dnote[open] summary::before{content:"– "}
-details.dnote .body{padding:0 16px 14px;font-size:14px;color:var(--ink-2);max-width:78ch}
-details.dnote .body p{margin:6px 0 0}
-details.dnote code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--sunk);padding:1px 5px;border-radius:3px}
-
 /* ---------- blocks ---------- */
 section.block{margin-top:34px}
 .blockhead{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
@@ -172,8 +162,10 @@ svg text.val{font-size:11px;font-weight:500;fill:var(--ink-2)}
 .clubcard .id .nm .bar{width:4px;height:17px;border-radius:2px;flex:none}
 .clubcard .id .sub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)}
 .clubcard .id .go{margin-top:auto;font-size:12.5px;color:var(--ink-2);font-family:"IBM Plex Sans",sans-serif}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-.met{padding:11px 14px;border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:4px;
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+@media (max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.metrics{grid-template-columns:1fr}}
+.met{padding:11px 14px;background:var(--surface);display:flex;flex-direction:column;gap:4px;
   text-decoration:none}
 .met:hover{background:var(--surface-2)}
 .met:focus-visible{outline:2px solid var(--s1);outline-offset:-2px}
@@ -193,8 +185,11 @@ svg text.val{font-size:11px;font-weight:500;fill:var(--ink-2)}
 .hero .title{display:flex;align-items:center;gap:12px}
 .hero .title .bar{width:6px;height:34px;border-radius:3px;flex:none}
 .hero h1{font-size:clamp(28px,4vw,40px)}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
   background:var(--rule);border:1px solid var(--rule);border-radius:7px;overflow:hidden;margin-top:18px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:430px){.stats{grid-template-columns:1fr}}
+.statsnote{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-muted);margin-top:8px}
 .stat{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:4px;text-decoration:none}
 .stat:hover{background:var(--surface-2)}
 .stat:focus-visible{outline:2px solid var(--s1);outline-offset:-2px}
@@ -313,9 +308,9 @@ const METRICS={
          head:'Distance',blurb:'How far it actually goes, session by session.'},
   carry:{k:C.carry,label:'Carry',short:'Carry',unit:' yd',dec:1,dir:1,
          head:'Carry',blurb:'Distance through the air — the number that clears a bunker.'},
-  aside:{k:C.side,label:'Side miss',short:'Side miss',unit:' ft',dec:1,abs:true,dir:-1,
+  aside:{k:C.side,label:'Side miss',short:'Side miss',unit:' yd',dec:1,abs:true,dir:-1,
          head:'How far offline',blurb:'Absolute distance from the target line, regardless of direction.'},
-  side :{k:C.side,label:'Side (+right)',short:'Side L/R',unit:' ft',dec:1,dir:0,target:0,
+  side :{k:C.side,label:'Side (+right)',short:'Side L/R',unit:' yd',dec:1,dir:0,target:0,
          head:'Which way it misses',blurb:'Signed offline distance — right is positive.'},
   smash:{k:C.smash,label:'Smash factor',short:'Smash',unit:'',dec:3,dir:1,
          head:'Strike quality',blurb:'Ball speed over club speed. A centred strike, in one number.'},
@@ -327,7 +322,7 @@ const METRICS={
 const METRIC_KEYS=['total','carry','aside','smash','f2p','path','side'];
 const TREND_KEYS=['total','carry','aside','side','smash','f2p','path'];
 const STORY_KEYS=['total','aside','f2p','smash'];
-const CARD_KEYS=['total','aside','smash','f2p'];
+const CARD_KEYS=['carry','total','aside','smash','path','f2p'];
 
 const clubRows=c=>ROWS.filter(r=>CLUBS[r[C.club]]===c);
 const CLUB_LIST=CLUBS.filter(c=>clubRows(c).length>=60);
@@ -420,12 +415,12 @@ function gappingSVG(metricKey){
   const order=CLUB_LIST.slice().sort(byLoft);
   const ser=order.map(c=>({club:c,v:clubRows(c).map(r=>r[key]).filter(v=>v!=null)}));
   const flat=ser.flatMap(s=>s.v), lo=Math.min(...flat)-8, hi=Math.max(...flat)+8;
-  const rowH=64, amp=78, W=1000, P={l:104,r:24,t:16,b:40};
+  const rowH=70, amp=50, W=1000, P={l:104,r:24,t:16,b:40};
   const H=P.t+rowH*ser.length+P.b;
   const grid=[...Array(200)].map((_,i)=>lo+(hi-lo)*i/199);
   const sx=v=>P.l+((v-lo)/(hi-lo))*(W-P.l-P.r);
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="distance distribution by club">`;
-  const step=hi-lo>180?40:20;
+  const step=20;
   for(let t=Math.ceil(lo/step)*step;t<=hi;t+=step){
     s+=`<line x1="${sx(t).toFixed(1)}" y1="${P.t}" x2="${sx(t).toFixed(1)}" y2="${H-P.b}" class="grid-line"/>`;
     s+=`<text x="${sx(t).toFixed(1)}" y="${H-P.b+16}" text-anchor="middle">${t}</text>`;
@@ -445,10 +440,9 @@ function gappingSVG(metricKey){
         data-tip="${esc(`<b>${r.sr.club}</b> · ${r.sr.v.length} shots<br>median ${r.med.toFixed(0)} yd<br>P25–P75 ${r.p25.toFixed(0)}–${r.p75.toFixed(0)} yd<br>σ ${sd(r.sr.v).toFixed(1)} yd<br><i>click to open ${r.sr.club}</i>`)}"/>`;
     s+=`</a>`;
     s+=`<line x1="${sx(r.med).toFixed(1)}" y1="${r.base}" x2="${sx(r.med).toFixed(1)}" y2="${r.base-32}" stroke="${r.col}" stroke-width="2.5"/>`;
-    s+=`<line x1="${sx(r.p25).toFixed(1)}" y1="${r.base+5}" x2="${sx(r.p75).toFixed(1)}" y2="${r.base+5}" stroke="var(--ink-muted)" stroke-width="1.5"/>`;
+    s+=`<line x1="${sx(r.p25).toFixed(1)}" y1="${r.base-5}" x2="${sx(r.p75).toFixed(1)}" y2="${r.base-5}" stroke="var(--ink-muted)" stroke-width="1.5"/>`;
     s+=`<text x="${P.l-12}" y="${r.base-3}" text-anchor="end" class="lbl" style="font-weight:600;fill:var(--ink)">${esc(r.sr.club)}</text>`;
     s+=`<text x="${P.l-12}" y="${r.base+11}" text-anchor="end">${r.sr.v.length} shots</text>`;
-    s+=`<text x="${sx(r.med).toFixed(1)}" y="${r.base-37}" text-anchor="middle" class="val">${r.med.toFixed(0)}</text>`;
   }
   const laps=[];
   for(let i=0;i<rows.length-1;i++){
@@ -515,8 +509,8 @@ function multiplesHTML(club){
   const html=sess.map((ss,i)=>{
     const pts=ss.rows.map(r=>[r[C.total],r[C.side]]);
     const e=ellipse(pts), col=rampAt(i,sess.length), med=quant(pts.map(p=>p[0]),.5);
-    const tt=`<b>${fmtD(ss.date)}</b> · ${ss.rows.length} shots<br>median ${med.toFixed(0)} yd<br>side ${sgn(mean(ss.rows.map(r=>r[C.side])),1)} ft`+
-             (e?`<br>68% oval ${(2*e.ax).toFixed(0)} yd × ${(2*e.bx).toFixed(0)} ft`:'');
+    const tt=`<b>${fmtD(ss.date)}</b> · ${ss.rows.length} shots<br>median ${med.toFixed(0)} yd<br>side ${sgn(mean(ss.rows.map(r=>r[C.side])),1)} yd`+
+             (e?`<br>68% oval ${(2*e.ax).toFixed(0)} yd × ${(2*e.bx).toFixed(0)} yd`:'');
     return `<div class="mini"><div class="t"><span>${esc(fmtD(ss.date))}</span><span>${ss.rows.length}</span></div>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ss.date)} dispersion" data-tip="${esc(tt)}" style="cursor:crosshair">
         <line x1="${P.l}" y1="${sy(0).toFixed(1)}" x2="${W-P.r}" y2="${sy(0).toFixed(1)}" class="axis-line"/>
@@ -654,10 +648,6 @@ const crumbs=parts=>`<nav class="crumbs">`+parts.map((p,i)=>
   (i?'<span class="sep">/</span>':'')+(p[1]?`<a href="${esc(p[1])}">${esc(p[0])}</a>`:`<span>${esc(p[0])}</span>`)
 ).join('')+`</nav>`;
 
-function dnote(label,body){
-  return `<details class="dnote"><summary>${esc(label)}</summary><div class="body">${body}</div></details>`;
-}
-
 /* ---------- A. overview ---------- */
 function viewOverview(){
   const g=gappingSVG(gapMetric);
@@ -708,13 +698,6 @@ function viewOverview(){
         <div class="metrics">${CARD_KEYS.map(mk=>metricCell(club,mk)).join('')}</div>
       </div>`;}).join('')}</div>
   </section>
-
-  ${dnote('Design note · why this is the landing screen',`
-    <p>The old Progress page opened on roughly 40 stacked SVGs with no summary. This screen answers the two questions
-    you can only ask across clubs — <b>do my distances gap properly</b> and <b>which club moved</b> — and then gets out
-    of the way. Everything deeper is one click down.</p>
-    <p>Each metric cell is its own link, so you can go straight from “smash looks off on the 7-iron” to that club's
-    trend chart without passing through the club page.</p>`)}
   `;
   wireSeg(app,'gapM',v=>{gapMetric=v;render();});
   bindTips(app);
@@ -726,10 +709,18 @@ function viewClub(club,tmkRaw){
   const tmk=METRICS[tmkRaw]?tmkRaw:'total', tm=METRICS[tmk];
   const href=mk=>`#/club/${encodeURIComponent(club)}/${mk}`;
   const sess=sessionsOf(club,3), rows=clubRows(club), last=sess[sess.length-1];
-  const stat=mk=>{const m=METRICS[mk];const v=quant(vals(last.rows,m),.5);
+  const stat=mk=>{
+    const m=METRICS[mk];
+    const cur=blockStat(sess.slice(-1),m), base=blockStat(sess.slice(-4,-1),m);
+    let chip='';
+    if(base.n){
+      const delta=cur.mu-base.mu, sig=diffSig(cur,base), imp=improve(m,cur.mu,base.mu);
+      const cls=!sig?'flat':imp>0?'up':'dn';
+      chip=`<span class="chip ${cls}">${delta>0?'▲':delta<0?'▼':'–'} ${Math.abs(delta).toFixed(m.dec===3?2:1)}${sig?'':' · noise'}</span>`;
+    }
     return `<a class="stat" href="${href(mk)}">
       <span class="k">${esc(m.short)} · last session</span>
-      <span class="v">${fmtV(m,v)}<em>${esc(m.unit.trim())}</em></span></a>`;};
+      <span class="v">${fmtV(m,cur.mu)}<em>${esc(m.unit.trim())}</em></span>${chip}</a>`;};
   const mult=multiplesHTML(club);
   const roll=rollingSVG(club,tmk,rollWin), noise=noiseSVG(club,tmk), tst=story(club,tmk);
 
@@ -745,7 +736,8 @@ function viewClub(club,tmkRaw){
       <span><b>${esc(fmtDY(sess[0].date))}</b> → <b>${esc(fmtDY(last.date))}</b></span>
       <span>last session <b>${last.rows.length}</b> shots</span>
     </div>
-    <div class="stats">${['total','carry','aside','smash','f2p'].map(stat).join('')}</div>
+    <div class="stats">${['carry','total','aside','smash','path','f2p'].map(stat).join('')}</div>
+    <p class="statsnote">Last session against the three before it · grey means the move is inside noise · click any tile for its trend</p>
   </div>
 
   ${STORY_KEYS.map(mk=>{
@@ -811,7 +803,7 @@ function viewClub(club,tmkRaw){
     </div>
     <div class="panel">
       ${mult?`${mult.html}
-        <p class="caption">0–${mult.sc.xmax} yd downrange, ±${mult.sc.ymax} ft offline, shared across all
+        <p class="caption">0–${mult.sc.xmax} yd downrange, ±${mult.sc.ymax} yd offline, shared across all
         ${mult.sess.length} panels. Ring = the 68% ellipse; a tilted ring means your longer shots also miss to one
         side. Scan the row rather than overlaying — past about eight sessions, stacked ovals stop separating.</p>`
        :`<p class="empty">${esc(club)} has ${sessionsOf(club,5).length} session(s) with 5+ shots. Session panels turn on at 6 —
@@ -833,21 +825,9 @@ function viewClub(club,tmkRaw){
           <td>${q('carry').toFixed(0)}</td><td>${sgn(q('side'),0)}</td><td>${q('aside').toFixed(0)}</td>
           <td>${q('smash').toFixed(2)}</td><td>${sgn(q('f2p'),1)}</td><td>${sgn(q('path'),1)}</td></tr>`;
       }).join('')}</tbody></table></div>
-      <p class="caption">Medians per session; σ is the standard deviation of total distance. Distances in yards,
-      side in feet, angles in degrees.</p></div>
+      <p class="caption">Medians per session; σ is the standard deviation of total distance. Distances and side in
+      yards, angles in degrees.</p></div>
   </section>
-
-  ${dnote('Design note · everything about one club, in one place',`
-    <p>One club, one story per dimension, in the order you'd actually ask: how far, how offline, what shape, how well
-    struck. The sentence above each ridgeline is generated from the data — it compares the last few sessions against
-    the few before them and refuses to call anything a change unless the gap clears
-    <code>1.96·√(SE₁²+SE₂²)</code>.</p>
-    <p>Trend &amp; confidence lives here rather than in the top nav because it is only ever meaningful for one club
-    and one measure. Every section heading and every stat tile jumps to it with that measure already selected, and
-    the URL carries both — <code>#/club/9Iron/smash</code> — so a particular reading is linkable. Switching club from
-    the Clubs menu keeps the measure you were looking at.</p>
-    <p>A derivative of a noisy series is noisier than the series, which is why the two charts sit together: the top
-    one says <em>which way</em>, the bottom says <em>whether you're entitled to believe it</em>.</p>`)}
   `;
   app.querySelector('#tMetric')&&wireSeg(app,'tMetric',v=>{location.hash=href(v);});
   wireSeg(app,'tWin',v=>{rollWin=+v;render();});
@@ -905,17 +885,9 @@ function viewData(){
           <td>${q('carry').toFixed(0)}</td><td>${sgn(q('side'),0)}</td><td>${q('aside').toFixed(0)}</td>
           <td>${q('smash').toFixed(2)}</td><td>${sgn(q('f2p'),1)}</td><td>${sgn(q('path'),1)}</td></tr>`;
       }).join('')}</tbody></table></div>
-      <p class="caption">Distances in yards, side in feet (+ right), angles in degrees. All values from TrackMan's
-      <b>normalized</b> columns — adjusted for ball, altitude and temperature — so a cold session doesn't read as a
-      swing regression.</p></div>
+      <p class="caption">Distances and side in yards (+ right), angles in degrees. TrackMan reports these in metres
+      and m/s regardless of display settings; everything here is converted to real-world units before it's stored.</p></div>
   </section>
-
-  ${dnote('Design note · keep the raw view',`
-    <p>Summaries earn trust by being checkable. Every number in the charts resolves to a row here, and every club
-    name is a link back into its drill-down.</p>
-    <p>Worth fixing before this ships for real: the live app stores TrackMan's <code>measurement_*</code> fields
-    verbatim — metres and m/s — and labels them <code>yd</code> and <code>mph</code>. Distances need ×1.09361 and
-    speeds ×2.23694. These tables use the corrected, normalized values.</p>`)}
   `;
   bindTips(app);
 }

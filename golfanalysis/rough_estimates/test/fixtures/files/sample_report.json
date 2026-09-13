@@ -41,6 +41,7 @@
             "SmashFactor": 1.33,
             "Carry": 100.0,
             "Total": 110.0,
+            "TotalSide": 15.0,
             "BallTrajectory": [{ "X": 0.0, "Y": 0.0, "Z": 0.0 }, { "X": 1.0, "Y": 1.0, "Z": 1.0 }]
           },
           "NormalizedMeasurement": {

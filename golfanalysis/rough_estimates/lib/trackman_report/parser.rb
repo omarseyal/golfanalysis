@@ -76,13 +76,17 @@ module TrackmanReport
       row
     end
 
-    # TrackMan's measurement_* fields are metres/m/s (see Units) -- add
-    # corrected copies under a _yd/_mph suffix for anything that computes
-    # or displays real-world distance/speed, leaving the originals
-    # untouched so raw CSV/JSON export still matches what TrackMan sent.
+    # TrackMan's measurement_* fields are metres/m/s, except *_side which is
+    # feet (see Units) -- add corrected copies under a _yd/_mph suffix for
+    # anything that computes or displays real-world distance/speed, leaving
+    # the originals untouched so raw CSV/JSON export still matches what
+    # TrackMan sent.
     def add_corrected_units(row)
-      %w[total carry total_side carry_side].each do |field|
+      %w[total carry].each do |field|
         row["measurement_#{field}_yd"] = Units.meters_to_yards(row["measurement_#{field}"])
+      end
+      %w[total_side carry_side].each do |field|
+        row["measurement_#{field}_yd"] = Units.feet_to_yards(row["measurement_#{field}"])
       end
       %w[club_speed ball_speed].each do |field|
         row["measurement_#{field}_mph"] = Units.mps_to_mph(row["measurement_#{field}"])
