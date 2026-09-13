@@ -192,6 +192,11 @@ svg text.val{font-size:11px;font-weight:500;fill:var(--ink-2)}
 .met .v{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-size:20px;font-weight:700;line-height:1;
   font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:5px;color:var(--ink)}
 .met .v em{font-style:normal;font-size:11px;font-weight:400;color:var(--ink-muted);font-family:"IBM Plex Mono",monospace}
+.clubcard.locked .unlock{padding:14px 16px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.clubcard.locked .track{height:5px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.clubcard.locked .fill{height:100%;border-radius:3px}
+.clubcard.locked .unlock p{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.clubcard.locked .unlock p b{color:var(--ink)}
 .chip{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:1px 5px;border-radius:3px;
   display:inline-flex;align-items:center;gap:3px;width:fit-content}
 .chip.up{color:var(--good);background:color-mix(in srgb,var(--good) 13%,transparent)}
@@ -375,7 +380,9 @@ const PALETTE=['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(
 // from unused slots in the middle of LOFT_ORDER
 let CLUB_RANK={};
 const CLUB_COLOR=new Proxy({}, {get:(_,club)=>PALETTE[(CLUB_RANK[club]||0)%PALETTE.length]});
-CLUB_LIST.slice().sort(byLoft).forEach((c,i)=>{CLUB_RANK[c]=i;});
+/* ranked/colored from every club with any data, not just drill-down-eligible ones, so the
+   gapping ridgeline and the below-threshold teaser cards still get a stable, distinct color */
+CLUBS.slice().sort(byLoft).forEach((c,i)=>{CLUB_RANK[c]=i;});
 const RAMP=[...Array(10)].map((_,i)=>`var(--r${i})`);
 const rampAt=(i,n)=>RAMP[n<=1?9:Math.round(i/(n-1)*9)];
 const vals=(rows,m)=>rows.map(r=>r[m.k]).filter(v=>v!=null).map(v=>m.abs?Math.abs(v):v);
@@ -448,7 +455,7 @@ const selHTML=(id,opts,cur)=>`<select id="${id}">`+
 /* ================= chart: gapping ridgeline ================= */
 function gappingSVG(metricKey,windowDays){
   const key=metricKey==='total'?C.total:C.carry;
-  const order=CLUB_LIST.slice().sort(byLoft);
+  const order=CLUBS.slice().sort(byLoft); // every club with any data, not just the 60-shot drill-down-eligible ones
   // recent gapping only -- an old swing/club change shouldn't blend into where
   // the bag actually lands today. Fall back to all-time if the window is too
   // narrow to say anything (e.g. nothing hit in the last N days).
@@ -684,6 +691,24 @@ function metricCell(club,mk){
     <span class="chip ${cls}">${arrow} ${Math.abs(delta).toFixed(m.dec===3?2:1)}${sig?'':' · noise'}</span>
     ${sparkHTML(club,mk)}</a>`;
 }
+/* below the 60-shot drill-down floor: show what's there (median carry so far) plus how far
+   off unlocking the full club page is, instead of just omitting the club entirely */
+function lockedCardHTML(club,n){
+  const pct=Math.round(Math.min(100,n/60*100));
+  const carry=vals(clubRows(club),METRICS.carry);
+  const med=carry.length?`<b>${quant(carry,.5).toFixed(0)}</b> yd median carry so far`:'';
+  return `<div class="clubcard locked">
+    <a class="id" href="#/club/${esc(club)}">
+      <span class="nm"><span class="bar" style="background:${CLUB_COLOR[club]}"></span>${esc(club)}</span>
+      <span class="sub">${n} of 60 shots</span>
+    </a>
+    <div class="unlock">
+      <div class="track"><div class="fill" style="width:${pct}%;background:${CLUB_COLOR[club]}"></div></div>
+      <p>${med?med+' — ':''}${60-n} more shot${60-n===1?'':'s'} to unlock trend, dispersion and gapping charts.
+      Under 60 shots isn't enough to tell a real pattern from noise.</p>
+    </div>
+  </div>`;
+}
 
 /* ================= views ================= */
 const app=document.getElementById('app');
@@ -734,8 +759,10 @@ function viewOverview(){
       <h2>By club</h2>
       <span class="sub">Latest session median, versus the three before it. Grey means the move is inside noise.</span>
     </div>
-    <div class="cards">${CLUB_LIST.slice().sort(byLoft).map(club=>{
-      const sess=sessionsOf(club,3), n=clubRows(club).length;
+    <div class="cards">${CLUBS.slice().sort(byLoft).map(club=>{
+      const n=clubRows(club).length;
+      if(n<60)return lockedCardHTML(club,n);
+      const sess=sessionsOf(club,3);
       if(!sess.length)return '';
       return `<div class="clubcard">
         <a class="id" href="#/club/${esc(club)}">
