@@ -315,6 +315,7 @@ function quant(a,p){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),i=(s.l
 const day=d=>Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10))/864e5;
 const fmtD=d=>new Date(day(d)*864e5).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
 const fmtDY=d=>new Date(day(d)*864e5).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+const fmtDayNum=n=>new Date(n*864e5).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'}); // fmtD, but from a day-number (see day()) rather than an ISO date string
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sgn=(v,d)=>(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(d);
 
@@ -461,11 +462,18 @@ function gappingSVG(metricKey,windowDays){
   // narrow to say anything (e.g. nothing hit in the last N days).
   const maxDay=day(ALL_SESSIONS[ALL_SESSIONS.length-1]);
   const cutoff=windowDays?maxDay-windowDays+1:-Infinity;
-  const rowsFor=cut=>order.map(c=>({club:c,
-    v:clubRows(c).filter(r=>day(DATES[r[C.date]])>=cut).map(r=>r[key]).filter(v=>v!=null)}))
-    .filter(sr=>sr.v.length>0);
+  // a club with nothing in the selected window still gets a row -- all of its shots, flagged
+  // stale -- instead of silently vanishing just because its one session predates the window
+  // (e.g. a wedge only hit two months ago shouldn't disappear from "2 weeks").
+  const rowsFor=cut=>order.map(c=>{
+    const all=clubRows(c), fresh=all.filter(r=>day(DATES[r[C.date]])>=cut);
+    const stale=cut>-Infinity&&!fresh.length&&all.length>0;
+    const use=stale?all:fresh;
+    return {club:c, v:use.map(r=>r[key]).filter(v=>v!=null), stale,
+      lastDay:stale?all.reduce((mx,r)=>Math.max(mx,day(DATES[r[C.date]])),-Infinity):null};
+  }).filter(sr=>sr.v.length>0);
   let ser=rowsFor(cutoff), windowed=!!windowDays;
-  if(windowDays&&!ser.length){ser=rowsFor(-Infinity);windowed=false;}
+  if(windowDays&&ser.every(sr=>sr.stale)){ser=rowsFor(-Infinity);windowed=false;}
   const flat=ser.flatMap(s=>s.v), lo=Math.min(...flat)-8, hi=Math.max(...flat)+8;
   const rowH=70, amp=50, W=1000, P={l:104,r:24,t:16,b:40};
   const H=P.t+rowH*ser.length+P.b;
@@ -486,15 +494,17 @@ function gappingSVG(metricKey,windowDays){
   });
   for(let i=rows.length-1;i>=0;i--){
     const r=rows[i];
+    const staleNote=r.sr.stale?`<br><i>nothing in this window — showing all-time, last hit ${fmtDayNum(r.sr.lastDay)}</i>`:'';
     s+=`<path d="${r.path}" fill="var(--surface)"/>`;
     s+=`<a href="#/club/${esc(r.sr.club)}" style="cursor:pointer">`;
-    s+=`<path d="${r.path}" fill="${r.col}" fill-opacity=".24" stroke="${r.col}" stroke-width="2" stroke-linejoin="round"
-        data-tip="${esc(`<b>${r.sr.club}</b> · ${r.sr.v.length} shots<br>median ${r.med.toFixed(0)} yd<br>P25–P75 ${r.p25.toFixed(0)}–${r.p75.toFixed(0)} yd<br>σ ${sd(r.sr.v).toFixed(1)} yd<br><i>click to open ${r.sr.club}</i>`)}"/>`;
+    s+=`<path d="${r.path}" fill="${r.col}" fill-opacity="${r.sr.stale?.12:.24}" stroke="${r.col}" stroke-width="2"
+        stroke-dasharray="${r.sr.stale?'4 3':'none'}" stroke-linejoin="round"
+        data-tip="${esc(`<b>${r.sr.club}</b> · ${r.sr.v.length} shots<br>median ${r.med.toFixed(0)} yd<br>P25–P75 ${r.p25.toFixed(0)}–${r.p75.toFixed(0)} yd<br>σ ${sd(r.sr.v).toFixed(1)} yd${staleNote}<br><i>click to open ${r.sr.club}</i>`)}"/>`;
     s+=`</a>`;
-    s+=`<line x1="${sx(r.med).toFixed(1)}" y1="${r.base}" x2="${sx(r.med).toFixed(1)}" y2="${r.base-32}" stroke="${r.col}" stroke-width="2.5"/>`;
+    s+=`<line x1="${sx(r.med).toFixed(1)}" y1="${r.base}" x2="${sx(r.med).toFixed(1)}" y2="${r.base-32}" stroke="${r.col}" stroke-width="2.5" stroke-opacity="${r.sr.stale?.5:1}"/>`;
     s+=`<line x1="${sx(r.p25).toFixed(1)}" y1="${r.base-5}" x2="${sx(r.p75).toFixed(1)}" y2="${r.base-5}" stroke="var(--ink-muted)" stroke-width="1.5"/>`;
     s+=`<text x="${P.l-12}" y="${r.base-3}" text-anchor="end" class="lbl" style="font-weight:600;fill:var(--ink)">${esc(r.sr.club)}</text>`;
-    s+=`<text x="${P.l-12}" y="${r.base+11}" text-anchor="end">${r.sr.v.length} shots</text>`;
+    s+=`<text x="${P.l-12}" y="${r.base+11}" text-anchor="end">${r.sr.stale?`last ${esc(fmtDayNum(r.sr.lastDay))}`:`${r.sr.v.length} shots`}</text>`;
   }
   const laps=[];
   for(let i=0;i<rows.length-1;i++){
