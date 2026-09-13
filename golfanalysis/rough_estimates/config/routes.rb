@@ -9,7 +9,6 @@ Rails.application.routes.draw do
   delete "logout", to: "sessions#destroy"
 
   resources :trackman_sessions, only: %i[index create show destroy]
-  get "summary", to: "summary#index"
   get "progress", to: "analysis#index"
 
   get "account", to: "account#show"

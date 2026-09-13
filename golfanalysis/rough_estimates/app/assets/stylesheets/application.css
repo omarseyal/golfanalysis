@@ -1,35 +1,41 @@
+/* Palette mirrors the Analysis dashboard's own tokens (app/views/analysis/index.html.erb)
+   so the rest of the app (Sessions, Account) reads as one design, not a leftover older one. */
 :root {
   color-scheme: light dark;
-  --bg: #f7f7f5;
-  --card-bg: #ffffff;
-  --text: #1a1a1a;
-  --muted: #6b6b6b;
-  --border: #e3e2df;
-  --grid: #e9e8e5;
-  --accent: #2f6fb0;
+  --bg: #f2f5ee;
+  --card-bg: #fbfcf9;
+  --sunk: #eceff0;
+  --text: #12150f;
+  --muted: #82867a;
+  --border: #dfe3d8;
+  --border-strong: #c8cdbe;
+  --grid: #eceff0;
+  --accent: #2a78d6;
   --accent-text: #ffffff;
-  --danger: #b3492f;
-  --p25: #9fc4e8;
-  --p75: #f2b5a0;
-  --p50: #2f6fb0;
-  --band: rgba(80, 140, 200, 0.15);
+  --danger: #d03b3b;
+  --p25: #9ec5f4;
+  --p75: #3987e5;
+  --p50: #2a78d6;
+  --band: rgba(42, 120, 214, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #16171a;
-    --card-bg: #1f2023;
-    --text: #f0f0ef;
-    --muted: #9a9a97;
-    --border: #34353a;
-    --grid: #2c2d31;
-    --accent: #7fb8ff;
+    --bg: #0d0f0b;
+    --card-bg: #191c15;
+    --sunk: #131610;
+    --text: #f4f6ef;
+    --muted: #8a8f80;
+    --border: #2b2f25;
+    --border-strong: #3c4134;
+    --grid: #131610;
+    --accent: #3987e5;
     --accent-text: #0f1115;
-    --danger: #e08a68;
-    --p25: #6ea6d8;
-    --p75: #e08a68;
-    --p50: #7fb8ff;
-    --band: rgba(127, 184, 255, 0.16);
+    --danger: #e66767;
+    --p25: #6da7ec;
+    --p75: #b7d3f6;
+    --p50: #3987e5;
+    --band: rgba(57, 135, 229, 0.16);
   }
 }
 
@@ -59,7 +65,7 @@ h3 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--muted); }
 nav.topbar {
   display: flex; align-items: center;
   gap: 20px; padding: 11px 16px; margin-bottom: 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
   flex-wrap: wrap;
   position: sticky; top: 0; z-index: 30;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
@@ -90,12 +96,16 @@ nav.topbar button.link-button { font-family: "IBM Plex Sans", sans-serif; font-s
 
 /* --- cards / tables --- */
 .card {
-  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 7px;
   padding: 16px; margin-bottom: 20px;
 }
-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
-th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-th { color: var(--muted); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500;
+}
+tbody tr:hover { background: var(--sunk); }
 .table-scroll { overflow-x: auto; }
 .empty-state { color: var(--muted); font-size: 12.5px; padding: 8px 0; }
 
@@ -111,10 +121,16 @@ input[type="text"], input[type="email"], input[type="password"], input[type="url
 .inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
 .inline-form .field { margin-bottom: 0; flex: 1 1 320px; }
 
-button, .button {
-  font: inherit; font-size: 12.5px; padding: 7px 14px; border-radius: 6px; cursor: pointer;
-  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text);
+button, .button, input[type="submit"] {
+  font: inherit; font-size: 13px; padding: 5px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--card-bg); color: var(--text);
   text-decoration: none; display: inline-block;
+}
+button:hover, .button:hover, input[type="submit"]:hover { border-color: var(--muted); }
+/* form submits (Add session, Save, Log in, ...) and .primary get the dark "call to action" fill;
+   button_to actions (Log out, Delete, ...) keep their own explicit classes below instead. */
+.button.primary, input[type="submit"] {
+  background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600;
 }
 button.secondary, .button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
 button.danger, .button.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
