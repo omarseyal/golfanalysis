@@ -49,6 +49,14 @@ class TrackmanReportTest < Minitest::Test
     assert_equal 30.0, row["measurement_club_speed"]
   end
 
+  def test_side_fields_are_feet_not_metres_unlike_total_and_carry
+    rows = TrackmanReport::Parser.parse(@report)
+    row = rows.find { |r| r["stroke_id"] == "stroke-1" }
+
+    # TotalSide is feet (÷3), not metres (×1.09361) like Total/Carry
+    assert_in_delta 15.0 / 3.0, row["measurement_total_side_yd"]
+  end
+
   def test_trajectories_excluded_by_default_but_available_on_request
     without = TrackmanReport::Parser.parse(@report)
     row_without = without.find { |r| r["stroke_id"] == "stroke-1" }
