@@ -59,17 +59,17 @@ a{color:inherit}
   backdrop-filter:blur(10px);border-bottom:1px solid var(--rule-2)}
 .topbar .in{max-width:1180px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .brand{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:800;font-size:19px;
-  letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center}
-.navlinks{display:flex;gap:4px;margin-left:auto;align-items:center}
+  letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;white-space:nowrap}
+.navlinks{display:flex;gap:4px 4px;margin-left:auto;align-items:center;flex-wrap:wrap}
 .navlinks a{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:500;font-size:15px;
-  text-decoration:none;color:var(--ink-2);padding:5px 11px;border-radius:5px}
+  text-decoration:none;color:var(--ink-2);padding:5px 11px;border-radius:5px;white-space:nowrap}
 .navlinks a:hover{background:var(--sunk)}
 .navlinks a[aria-current="page"]{background:var(--ink);color:var(--page);font-weight:700}
 .navlinks a:focus-visible,.brand:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
 .navlinks{position:relative}
 .menu{position:relative}
 .mtrigger{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:500;font-size:15px;
-  color:var(--ink-2);background:transparent;border:0;
+  color:var(--ink-2);background:transparent;border:0;white-space:nowrap;
   padding:5px 11px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .mtrigger:hover{background:var(--sunk)}
 .mtrigger:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
@@ -88,11 +88,14 @@ a{color:inherit}
 .dropdown a[aria-current="page"]{background:var(--sunk);color:var(--ink);font-weight:600}
 .dropdown a i{width:4px;height:17px;border-radius:2px;flex:none}
 .dropdown a .n{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)}
-@media (max-width:700px){.dropdown{left:auto;right:0}}
+/* below ~700px the topbar itself wraps onto multiple rows, so the dropdown can no longer
+   anchor to its small trigger button (it'd overflow the trigger's own edge, see mtrigger) --
+   pin it to the viewport instead and let JS (openMenu) position it under the whole topbar. */
+@media (max-width:700px){.dropdown{position:fixed;left:12px;right:12px;min-width:0}}
 .acct{display:flex;align-items:center;gap:10px;padding-left:6px;margin-left:6px;border-left:1px solid var(--rule)}
-.acct .who{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted)}
+.acct .who{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted);white-space:nowrap}
 .acct button{font:inherit;font-family:"IBM Plex Sans",sans-serif;font-size:12.5px;color:var(--ink-muted);
-  background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+  background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;white-space:nowrap}
 .acct button:hover{color:var(--ink)}
 @media (max-width:700px){.acct{border-left:0;padding-left:0;margin-left:0;width:100%;justify-content:space-between}}
 
@@ -984,7 +987,13 @@ const clubMenu=document.getElementById('clubmenu');
 const clubBtn=document.getElementById('clubbtn');
 const clubDrop=document.getElementById('clubdrop');
 let pinned=false, closeT=null;
-function openMenu(){clearTimeout(closeT);clubMenu.dataset.open='true';clubBtn.setAttribute('aria-expanded','true');}
+function openMenu(){
+  clearTimeout(closeT);clubMenu.dataset.open='true';clubBtn.setAttribute('aria-expanded','true');
+  /* on the fixed-position mobile layout (see .dropdown media query above) the CSS can't know
+     how tall the (possibly multi-row) topbar is, so park the panel just under it here instead */
+  clubDrop.style.top = matchMedia('(max-width:700px)').matches
+    ? (document.querySelector('.topbar').getBoundingClientRect().bottom + 7) + 'px' : '';
+}
 function closeMenu(){clearTimeout(closeT);pinned=false;clubMenu.dataset.open='false';clubBtn.setAttribute('aria-expanded','false');}
 function scheduleClose(){clearTimeout(closeT);closeT=setTimeout(()=>{if(!pinned)closeMenu();},280);}
 clubDrop.innerHTML=CLUB_LIST.slice().sort(byLoft).map(c=>{
