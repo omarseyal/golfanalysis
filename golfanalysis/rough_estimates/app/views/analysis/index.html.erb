@@ -410,10 +410,19 @@ const selHTML=(id,opts,cur)=>`<select id="${id}">`+
   opts.map(o=>`<option value="${esc(o[0])}"${o[0]===cur?' selected':''}>${esc(o[1])}</option>`).join('')+`</select>`;
 
 /* ================= chart: gapping ridgeline ================= */
-function gappingSVG(metricKey){
+function gappingSVG(metricKey,windowDays){
   const key=metricKey==='total'?C.total:C.carry;
   const order=CLUB_LIST.slice().sort(byLoft);
-  const ser=order.map(c=>({club:c,v:clubRows(c).map(r=>r[key]).filter(v=>v!=null)}));
+  // recent gapping only -- an old swing/club change shouldn't blend into where
+  // the bag actually lands today. Fall back to all-time if the window is too
+  // narrow to say anything (e.g. nothing hit in the last N days).
+  const maxDay=day(ALL_SESSIONS[ALL_SESSIONS.length-1]);
+  const cutoff=windowDays?maxDay-windowDays+1:-Infinity;
+  const rowsFor=cut=>order.map(c=>({club:c,
+    v:clubRows(c).filter(r=>day(DATES[r[C.date]])>=cut).map(r=>r[key]).filter(v=>v!=null)}))
+    .filter(sr=>sr.v.length>0);
+  let ser=rowsFor(cutoff), windowed=!!windowDays;
+  if(windowDays&&!ser.length){ser=rowsFor(-Infinity);windowed=false;}
   const flat=ser.flatMap(s=>s.v), lo=Math.min(...flat)-8, hi=Math.max(...flat)+8;
   const rowH=70, amp=50, W=1000, P={l:104,r:24,t:16,b:40};
   const H=P.t+rowH*ser.length+P.b;
@@ -449,7 +458,7 @@ function gappingSVG(metricKey){
     const lng=rows[i],sht=rows[i+1];
     if(sht.p90>lng.p10) laps.push(`<b>${sht.sr.club}/${lng.sr.club}</b> overlap ${(sht.p90-lng.p10).toFixed(0)} yd`);
   }
-  return {svg:s+'</svg>', laps};
+  return {svg:s+'</svg>', laps, windowed, n:flat.length};
 }
 
 /* ================= chart: ridgeline timeline ================= */
@@ -459,7 +468,7 @@ function ridgeSVG(club,mk,opts={}){
   const all=vals(clubRows(club),m);
   const padv=(mk==='smash')?0.03:(m.unit==='°'?1.5:4);
   const lo=quant(all,.005)-padv, hi=quant(all,.995)+padv;
-  const rowH=opts.rowH||17, amp=opts.amp||30, W=1000, P={l:94,r:66,t:16,b:38};
+  const rowH=opts.rowH||17, amp=opts.amp||Math.round(rowH*0.82), W=1000, P={l:94,r:66,t:16,b:38};
   const H=P.t+rowH*sess.length+amp+P.b;
   const grid=[...Array(180)].map((_,i)=>lo+(hi-lo)*i/179);
   const sx=v=>P.l+((Math.max(lo,Math.min(hi,v))-lo)/(hi-lo))*(W-P.l-P.r);
@@ -642,7 +651,8 @@ function metricCell(club,mk){
 
 /* ================= views ================= */
 const app=document.getElementById('app');
-let gapMetric='total', rollWin=50;
+let gapMetric='total', gapWindow='14', rollWin=50;
+const GAP_WINDOWS={'14':14,'30':30,'all':0};
 const ALL_SESSIONS=[...new Set(ROWS.map(r=>DATES[r[C.date]]))].sort();
 const crumbs=parts=>`<nav class="crumbs">`+parts.map((p,i)=>
   (i?'<span class="sep">/</span>':'')+(p[1]?`<a href="${esc(p[1])}">${esc(p[0])}</a>`:`<span>${esc(p[0])}</span>`)
@@ -650,7 +660,7 @@ const crumbs=parts=>`<nav class="crumbs">`+parts.map((p,i)=>
 
 /* ---------- A. overview ---------- */
 function viewOverview(){
-  const g=gappingSVG(gapMetric);
+  const g=gappingSVG(gapMetric,GAP_WINDOWS[gapWindow]);
   app.innerHTML=`
   ${crumbs([['Overview',null]])}
   <div class="viewhead">
@@ -672,11 +682,14 @@ function viewOverview(){
     <div class="panel">
       <div class="controls">
         <div class="ctl"><span>Measure</span>${segHTML('gapM',[['total','Total'],['carry','Carry']],gapMetric)}</div>
+        <div class="ctl"><span>Window</span>${segHTML('gapW',[['14','2 weeks'],['30','30 days'],['all','All time']],gapWindow)}</div>
       </div>
       <div class="plot">${g.svg}</div>
       <p class="caption">Notch = median, bracket = P25–P75. Overlap measured as P90 of the shorter club against P10
       of the longer: ${g.laps.length?g.laps.join(' · '):'none worth calling out'}. Where two ridges share a window,
-      the two clubs are doing the same job on their good and bad days.</p>
+      the two clubs are doing the same job on their good and bad days.
+      ${g.windowed?`Trailing ${gapWindow==='14'?'2 weeks':'30 days'} only (${g.n.toLocaleString()} shots) — a swing or club
+      change won't get diluted by everything hit before it.`:`Showing all-time data${gapWindow!=='all'?" — nothing hit in that window recently, so this is every shot on record instead":''}.`}</p>
     </div>
   </section>
 
@@ -700,6 +713,7 @@ function viewOverview(){
   </section>
   `;
   wireSeg(app,'gapM',v=>{gapMetric=v;render();});
+  wireSeg(app,'gapW',v=>{gapWindow=v;render();});
   bindTips(app);
 }
 
@@ -893,6 +907,7 @@ function viewData(){
 }
 
 /* ================= router ================= */
+let lastClub;
 function render(){
   if(!ROWS.length){
     app.innerHTML=`<div class="viewhead"><h1>No shots yet.</h1>
@@ -926,9 +941,12 @@ function render(){
   if(view==='club')viewClub(club,metric||'total');
   else if(view==='data')viewData();
   else viewOverview();
-  const anchor=metric?document.getElementById('trend'):null;
+  /* only hold scroll position for a metric change within the SAME club (the
+     trend selector); switching to a different club always jumps to top */
+  const anchor=(metric&&club===lastClub)?document.getElementById('trend'):null;
   if(anchor)anchor.scrollIntoView({block:'start'});
   else window.scrollTo({top:0});
+  lastClub=club;
 }
 
 /* --- clubs dropdown: hover on a mouse, tap on touch, keyboard-reachable either way --- */
