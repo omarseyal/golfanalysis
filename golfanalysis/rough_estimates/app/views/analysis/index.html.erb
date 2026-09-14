@@ -90,7 +90,10 @@ a{color:inherit}
 .dropdown a .n{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)}
 /* below ~700px the topbar itself wraps onto multiple rows, so the dropdown can no longer
    anchor to its small trigger button (it'd overflow the trigger's own edge, see mtrigger) --
-   pin it to the viewport instead and let JS (openMenu) position it under the whole topbar. */
+   pin it to the viewport's edges instead. top stays the inherited calc(100% + 7px): .topbar's
+   own backdrop-filter makes IT (not the viewport) the containing block for this fixed element,
+   so that percentage already resolves against the topbar's height, landing right below it
+   however tall the (now possibly multi-row) topbar is -- no JS positioning needed. */
 @media (max-width:700px){.dropdown{position:fixed;left:12px;right:12px;min-width:0}}
 /* opposite the brand, top-right of the identity row -- navlinks (the actual page tabs) wraps
    to its own full-width row below via flex-basis:100% above, so this stays put regardless of
@@ -1045,10 +1048,6 @@ function initMenu(menu,btn,drop){
   function openMenu(){
     ALL_MENUS.forEach(m=>{if(m!==ctl)m.close();});
     clearTimeout(closeT);menu.dataset.open='true';btn.setAttribute('aria-expanded','true');
-    /* on the fixed-position mobile layout (see .dropdown media query above) the CSS can't know
-       how tall the (possibly multi-row) topbar is, so park the panel just under it here instead */
-    drop.style.top = matchMedia('(max-width:700px)').matches
-      ? (document.querySelector('.topbar').getBoundingClientRect().bottom + 7) + 'px' : '';
   }
   function closeMenu(){clearTimeout(closeT);pinned=false;menu.dataset.open='false';btn.setAttribute('aria-expanded','false');}
   function scheduleClose(){clearTimeout(closeT);closeT=setTimeout(()=>{if(!pinned)closeMenu();},280);}
