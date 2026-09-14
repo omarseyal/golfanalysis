@@ -60,7 +60,7 @@ a{color:inherit}
 .topbar .in{max-width:1180px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .brand{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:800;font-size:19px;
   letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;white-space:nowrap}
-.navlinks{display:flex;gap:4px 4px;margin-left:auto;align-items:center;flex-wrap:wrap}
+.navlinks{display:flex;gap:4px 4px;align-items:center;flex-wrap:wrap;flex-basis:100%}
 .navlinks a{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:500;font-size:15px;
   text-decoration:none;color:var(--ink-2);padding:5px 11px;border-radius:5px;white-space:nowrap}
 .navlinks a:hover{background:var(--sunk)}
@@ -92,12 +92,19 @@ a{color:inherit}
    anchor to its small trigger button (it'd overflow the trigger's own edge, see mtrigger) --
    pin it to the viewport instead and let JS (openMenu) position it under the whole topbar. */
 @media (max-width:700px){.dropdown{position:fixed;left:12px;right:12px;min-width:0}}
-.acct{display:flex;align-items:center;gap:10px;padding-left:6px;margin-left:6px;border-left:1px solid var(--rule)}
-.acct .who{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted);white-space:nowrap}
-.acct button{font:inherit;font-family:"IBM Plex Sans",sans-serif;font-size:12.5px;color:var(--ink-muted);
-  background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;white-space:nowrap}
-.acct button:hover{color:var(--ink)}
-@media (max-width:700px){.acct{border-left:0;padding-left:0;margin-left:0;width:100%;justify-content:space-between}}
+/* opposite the brand, top-right of the identity row -- navlinks (the actual page tabs) wraps
+   to its own full-width row below via flex-basis:100% above, so this stays put regardless of
+   how many nav links there are or how narrow the screen gets. */
+.acctmenu{margin-left:auto}
+.acctmenu .dropdown{left:auto;right:0}
+.acct-dropdown{min-width:200px}
+.acct-email{padding:6px 10px 8px;margin-bottom:3px;border-bottom:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-dropdown form{display:contents}
+.acct-logout{display:block;width:100%;text-align:left;font:inherit;font-family:"IBM Plex Sans",sans-serif;
+  font-size:13.5px;color:var(--ink-2);background:none;border:0;padding:7px 10px;border-radius:5px;cursor:pointer}
+.acct-logout:hover{background:var(--surface-2);color:var(--ink)}
 
 .shell{max-width:1180px;margin:0 auto;padding:0 24px 100px}
 .crumbs{display:flex;gap:8px;align-items:center;padding:22px 0 0;font-size:13px;color:var(--ink-muted);
@@ -262,6 +269,7 @@ td a:hover{text-decoration:underline}
   .clubcard{grid-template-columns:1fr}
   .clubcard .id{border-right:0;border-bottom:1px solid var(--rule)}
   .story{flex-wrap:wrap}.story .act{margin-left:0;width:100%}
+  .subhead{flex-direction:column;align-items:flex-start;gap:2px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .flashbar{max-width:1180px;margin:10px auto 0;padding:0 24px}
@@ -282,6 +290,16 @@ td a:hover{text-decoration:underline}
 
 <div class="topbar"><div class="in">
   <a class="brand" href="#/">Rough estimates</a>
+  <div class="menu acctmenu" id="acctmenu" data-open="false">
+    <button type="button" class="mtrigger" id="acctbtn" aria-expanded="false" aria-haspopup="true" aria-controls="acctdrop">
+      Account
+      <svg class="caret" viewBox="0 0 10 7" aria-hidden="true"><path d="M1 1.5 L5 5.5 L9 1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="dropdown acct-dropdown" id="acctdrop" role="menu">
+      <div class="acct-email"><%= current_user.email %></div>
+      <%= button_to "Log out", logout_path, method: :delete, class: "acct-logout", form: { style: "display:contents" } %>
+    </div>
+  </div>
   <nav class="navlinks" id="nav">
     <a href="#/">Overview</a>
     <div class="menu" id="clubmenu" data-open="false">
@@ -293,10 +311,6 @@ td a:hover{text-decoration:underline}
     </div>
     <a href="#/data">Raw data</a>
     <a href="<%= trackman_sessions_path %>">Sessions →</a>
-    <div class="acct">
-      <span class="who"><%= current_user.email %></span>
-      <%= button_to "Log out", logout_path, method: :delete, form: { style: "display:inline" } %>
-    </div>
   </nav>
 </div></div>
 
@@ -1011,7 +1025,7 @@ function render(){
     a.setAttribute('href','#/club/'+encodeURIComponent(c)+(metric?'/'+metric:''));
     if(c===club)a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
   });
-  closeMenu();
+  clubMenuCtl.close();
   if(view==='club')viewClub(club,metric||'total');
   else if(view==='data')viewData();
   else viewOverview();
@@ -1023,36 +1037,46 @@ function render(){
   lastClub=club;
 }
 
-/* --- clubs dropdown: hover on a mouse, tap on touch, keyboard-reachable either way --- */
+/* --- dropdown menus (Clubs, Account): hover on a mouse, tap on touch, keyboard-reachable
+   either way. Shared by both so they behave identically and only one is ever open at a time. --- */
+const ALL_MENUS=[];
+function initMenu(menu,btn,drop){
+  let pinned=false, closeT=null;
+  function openMenu(){
+    ALL_MENUS.forEach(m=>{if(m!==ctl)m.close();});
+    clearTimeout(closeT);menu.dataset.open='true';btn.setAttribute('aria-expanded','true');
+    /* on the fixed-position mobile layout (see .dropdown media query above) the CSS can't know
+       how tall the (possibly multi-row) topbar is, so park the panel just under it here instead */
+    drop.style.top = matchMedia('(max-width:700px)').matches
+      ? (document.querySelector('.topbar').getBoundingClientRect().bottom + 7) + 'px' : '';
+  }
+  function closeMenu(){clearTimeout(closeT);pinned=false;menu.dataset.open='false';btn.setAttribute('aria-expanded','false');}
+  function scheduleClose(){clearTimeout(closeT);closeT=setTimeout(()=>{if(!pinned)closeMenu();},280);}
+  menu.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')openMenu();});
+  menu.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')clearTimeout(closeT);});
+  menu.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pinned)scheduleClose();});
+  btn.addEventListener('click',()=>{pinned=!pinned;pinned?openMenu():closeMenu();});
+  menu.addEventListener('focusin',openMenu);
+  menu.addEventListener('focusout',()=>{
+    setTimeout(()=>{if(!pinned&&!menu.contains(document.activeElement))closeMenu();},0);});
+  drop.addEventListener('click',closeMenu);
+  document.addEventListener('click',e=>{if(!menu.contains(e.target))closeMenu();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&menu.dataset.open==='true'){closeMenu();btn.focus();}});
+  const ctl={open:openMenu,close:closeMenu};
+  ALL_MENUS.push(ctl);
+  return ctl;
+}
 const clubMenu=document.getElementById('clubmenu');
 const clubBtn=document.getElementById('clubbtn');
 const clubDrop=document.getElementById('clubdrop');
-let pinned=false, closeT=null;
-function openMenu(){
-  clearTimeout(closeT);clubMenu.dataset.open='true';clubBtn.setAttribute('aria-expanded','true');
-  /* on the fixed-position mobile layout (see .dropdown media query above) the CSS can't know
-     how tall the (possibly multi-row) topbar is, so park the panel just under it here instead */
-  clubDrop.style.top = matchMedia('(max-width:700px)').matches
-    ? (document.querySelector('.topbar').getBoundingClientRect().bottom + 7) + 'px' : '';
-}
-function closeMenu(){clearTimeout(closeT);pinned=false;clubMenu.dataset.open='false';clubBtn.setAttribute('aria-expanded','false');}
-function scheduleClose(){clearTimeout(closeT);closeT=setTimeout(()=>{if(!pinned)closeMenu();},280);}
 clubDrop.innerHTML=CLUB_LIST.slice().sort(byLoft).map(c=>{
   const n=clubRows(c).length, s=sessionsOf(c,1).length;
   return `<a role="menuitem" data-club="${esc(c)}" href="#/club/${esc(c)}">
     <i style="background:${CLUB_COLOR[c]}"></i>${esc(c)}
     <span class="n">${n.toLocaleString()} shots · ${s}×</span></a>`;}).join('');
-clubMenu.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')openMenu();});
-clubMenu.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')clearTimeout(closeT);});
-clubMenu.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pinned)scheduleClose();});
-clubBtn.addEventListener('click',()=>{pinned=!pinned;pinned?openMenu():closeMenu();});
-clubMenu.addEventListener('focusin',openMenu);
-clubMenu.addEventListener('focusout',()=>{
-  setTimeout(()=>{if(!pinned&&!clubMenu.contains(document.activeElement))closeMenu();},0);});
-clubDrop.addEventListener('click',closeMenu);
-document.addEventListener('click',e=>{if(!clubMenu.contains(e.target))closeMenu();});
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&clubMenu.dataset.open==='true'){closeMenu();clubBtn.focus();}});
+const clubMenuCtl=initMenu(clubMenu,clubBtn,clubDrop);
+initMenu(document.getElementById('acctmenu'),document.getElementById('acctbtn'),document.getElementById('acctdrop'));
 
 window.addEventListener('hashchange',render);
 render();
