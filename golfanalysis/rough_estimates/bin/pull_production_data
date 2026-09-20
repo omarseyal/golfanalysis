@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Pulls a copy of the production (Heroku) database into the local
+# development database, so you can test against real data.
+#
+# Usage: bin/pull_production_data [--yes]
+#   --yes   skip the confirmation prompt (e.g. for non-interactive use)
+set -euo pipefail
+
+APP="${HEROKU_APP:-rough-estimates}"
+LOCAL_DB="rough_estimates_development"
+
+# Heroku's Postgres is on a newer major version than our local Homebrew
+# postgresql@17 client tools support for pg_dump/pg_restore (client must be
+# >= server major version). Prefer postgresql@18's client binaries if
+# installed, without touching the user's normal PATH/dev setup.
+if [[ -d /opt/homebrew/opt/postgresql@18/bin ]]; then
+  export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"
+fi
+
+if ! command -v heroku >/dev/null; then
+  echo "heroku CLI not found. Install with: brew install heroku/brew/heroku" >&2
+  exit 1
+fi
+
+if [[ "${1:-}" != "--yes" ]]; then
+  echo "This will DROP and REPLACE your local '$LOCAL_DB' database with a copy"
+  echo "of production data from the Heroku app '$APP'."
+  read -r -p "Continue? [y/N] " confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }
+fi
+
+echo "==> Dropping local $LOCAL_DB"
+dropdb --if-exists "$LOCAL_DB"
+
+echo "==> Pulling production data from $APP into $LOCAL_DB"
+# heroku pg:pull exits 1 if pg_restore hit *any* error, even ones it ignored.
+# In practice the only errors here are Heroku-managed "_heroku" schema event
+# triggers that don't exist locally -- harmless. Capture output, only fail
+# for anything else.
+set +e
+output="$(heroku pg:pull DATABASE_URL "$LOCAL_DB" --app "$APP" 2>&1)"
+status=$?
+set -e
+echo "$output"
+
+if [[ $status -ne 0 ]]; then
+  unexpected="$(echo "$output" | grep -E 'error:' | grep -v '_heroku' || true)"
+  if [[ -n "$unexpected" ]]; then
+    echo "==> Pull failed with unexpected errors:" >&2
+    echo "$unexpected" >&2
+    exit "$status"
+  fi
+  echo "==> (ignoring expected _heroku event-trigger errors, not present locally)"
+fi
+
+echo "==> Done. $LOCAL_DB now mirrors production."
