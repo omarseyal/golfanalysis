@@ -86,6 +86,10 @@
    so that percentage already resolves against the topbar's height, landing right below it
    however tall the (now possibly multi-row) topbar is -- no JS positioning needed. */
 @media (max-width:700px){.dropdown{position:fixed;left:12px;right:12px;min-width:0}}
+/* page content (.shell on the dashboard, .wrap elsewhere) uses the same
+   1180px column and 24px / 16px-on-phones gutter, so it lines up with the
+   brand and the first nav tab */
+@media (max-width:700px){.topbar .in{padding-left:16px;padding-right:16px}}
 /* opposite the brand, top-right of the identity row -- navlinks (the actual page tabs) wraps
    to its own full-width row below via flex-basis:100% above, so this stays put regardless of
    how many nav links there are or how narrow the screen gets. */
@@ -104,10 +108,9 @@
 .topbar a{color:inherit}
 .topbar .brand{color:var(--ink)}
 
-/* Notices and alerts (shared/_flash), just under the topbar on every page.
-   --flash-width/--flash-gutter match the page's content column: the
-   dashboard's .shell by default; application.css overrides for .wrap. */
-.flashbar{max-width:var(--flash-width,1180px);margin:12px auto 0;padding:0 var(--flash-gutter,24px)}
+/* Notices and alerts (shared/_flash), just under the topbar on every page,
+   in the same column as the page content. */
+.flashbar{max-width:1180px;margin:12px auto 0;padding:0 24px}
 .flashbar .notice,.flashbar .alert{font-family:"IBM Plex Sans",sans-serif;font-size:13px;
   padding:8px 12px;border-radius:6px;margin-bottom:8px}
 .flashbar .notice{background:var(--flag-bg);color:var(--ink)}

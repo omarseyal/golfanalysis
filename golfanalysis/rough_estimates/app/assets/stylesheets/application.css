@@ -59,12 +59,14 @@ h1 { font-size: 18px; margin: 0; }
 h2 { font-size: 15px; margin: 0 0 2px; }
 h3 { font-size: 12px; font-weight: 600; margin: 0 0 6px; color: var(--muted); }
 
-.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+/* the same column as the topbar (chrome.css), so cards line up with the
+   brand and the Overview tab; room under the header before the first card */
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 24px 0; }
+@media (max-width: 700px) { .wrap { padding: 16px 16px 0; } }
 
 /* --- nav --- */
-/* line notices (shared/_flash, styled in chrome.css) up with .wrap */
-:root { --flash-width: 1100px; --flash-gutter: 16px; }
-.flashbar { margin-bottom: 10px; }
+/* notices (shared/_flash, styled in chrome.css) already share .wrap's
+   column; .wrap's own top padding gives the space below them */
 
 /* --- cards / tables --- */
 .card {
