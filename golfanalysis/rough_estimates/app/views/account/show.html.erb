@@ -34,6 +34,19 @@
   </div>
 
   <div class="card">
+    <h2>Game token</h2>
+    <p class="muted" style="margin-top:0">Read-only: it can fetch your club stats and nothing else, so it's safe to put in a game that runs in the browser.</p>
+    <div class="api-key">
+      <code class="mono"><%= current_user.game_token %></code>
+      <%= button_to "Regenerate", account_regenerate_game_token_path, method: :post, class: "button secondary",
+            form: { onsubmit: "return confirm('Old game token stops working immediately. Continue?')" } %>
+    </div>
+    <pre class="endpoint-list">GET /api/v1/clubs?window=14|30|all   the Overview: gapping, overlaps, every club's card
+GET /api/v1/clubs/:club              one club's page, e.g. /api/v1/clubs/7Iron</pre>
+    <p class="muted">Example: <code class="mono">fetch("<%= request.base_url %>/api/v1/clubs?token=<%= current_user.game_token %>")</code></p>
+  </div>
+
+  <div class="card">
     <h2>Agent / API access</h2>
     <p class="muted" style="margin-top:0">
       Base URL: <code class="mono"><%= request.base_url %></code> &middot;

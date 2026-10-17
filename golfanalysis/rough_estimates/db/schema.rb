@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_034319) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
   create_table "shots", force: :cascade do |t|
     t.float "attack_angle"
     t.float "ball_speed"
@@ -54,12 +54,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_034319) do
     t.string "api_key", null: false
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.string "game_token", null: false
     t.string "name"
     t.string "password_digest", null: false
     t.string "player_name"
     t.datetime "updated_at", null: false
     t.index ["api_key"], name: "index_users_on_api_key", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["game_token"], name: "index_users_on_game_token", unique: true
   end
 
   add_foreign_key "shots", "trackman_sessions"

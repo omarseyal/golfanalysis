@@ -15,7 +15,9 @@ module Api
             "DELETE /api/v1/sessions/:id" => "Remove a session.",
             "GET /api/v1/summary" => "Per-club averages & dispersion for every session.",
             "GET /api/v1/progress" => "Per-club P25/P50/P75 series across sessions, chronological (lighter aggregate).",
-            "GET /api/v1/shots" => "Every shot, per-club and per-session, real-world units (yd/mph/deg) -- mirrors the Overview dashboard's own dataset."
+            "GET /api/v1/shots" => "Every shot, per-club and per-session, real-world units (yd/mph/deg) -- mirrors the Overview dashboard's own dataset.",
+            "GET /api/v1/clubs?window=14|30|all" => "The Overview's numbers: gapping per club (median/P10-P90/sd, in the window), overlaps, and each club's card stats vs its last 3 sessions. Also takes the read-only game token.",
+            "GET /api/v1/clubs/:club" => "One club's page: stat tiles, distributions, stories, trend, 'is it real?', dispersion ellipses, session log. Also takes the read-only game token."
           }
         }
       end

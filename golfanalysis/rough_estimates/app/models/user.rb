@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   has_secure_password
   has_secure_token :api_key
+  # Read-only: only the club stats API (Api::V1::ClubsController) accepts it.
+  has_secure_token :game_token
 
   has_many :trackman_sessions, dependent: :destroy
 

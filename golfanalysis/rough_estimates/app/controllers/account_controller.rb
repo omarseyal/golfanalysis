@@ -15,6 +15,11 @@ class AccountController < ApplicationController
     redirect_to account_path, notice: "Generated a new API key. Update anywhere the old one was used."
   end
 
+  def regenerate_game_token
+    current_user.regenerate_game_token
+    redirect_to account_path, notice: "Generated a new game token. Update your game with it."
+  end
+
   private
 
   def account_params

@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get "account", to: "account#show"
   patch "account", to: "account#update"
   post "account/regenerate_api_key", to: "account#regenerate_api_key"
+  post "account/regenerate_game_token", to: "account#regenerate_game_token"
 
   namespace :api do
     namespace :v1 do
@@ -23,6 +24,12 @@ Rails.application.routes.draw do
       get "summary", to: "summary#index"
       get "progress", to: "progress#index"
       get "shots", to: "shots#index"
+
+      # Read-only club stats for the game (game token or api key; CORS-open)
+      get "clubs", to: "clubs#index"
+      get "clubs/:club", to: "clubs#show", as: :club
+      match "clubs", to: "clubs#preflight", via: :options
+      match "clubs/:club", to: "clubs#preflight", via: :options
     end
   end
 
