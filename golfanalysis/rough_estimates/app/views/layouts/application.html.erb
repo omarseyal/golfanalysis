@@ -21,18 +21,7 @@
   </head>
 
   <body>
-    <% if logged_in? %>
-      <nav class="topbar">
-        <%= link_to "Rough estimates", root_path, class: "brand" %>
-        <div class="links">
-          <%= link_to "Overview", root_path, class: ("active" if current_page?(root_path)) %>
-          <%= link_to "Sessions", trackman_sessions_path, class: ("active" if current_page?(trackman_sessions_path)) %>
-          <%= link_to "Account", account_path, class: ("active" if current_page?(account_path)) %>
-          <span class="muted"><%= current_user.email %></span>
-          <%= button_to "Log out", logout_path, method: :delete, class: "link-button", form: { style: "display:inline" } %>
-        </div>
-      </nav>
-    <% end %>
+    <%= render "shared/topbar" if logged_in? %>
 
     <div class="flash">
       <% flash.each do |type, message| %>

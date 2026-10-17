@@ -1,0 +1,73 @@
+<%# The header on every signed-in page. On the dashboard (dashboard: true)
+    its links are #/ routes the dashboard's own JS handles, and the dashboard
+    fills the Clubs menu itself; everywhere else they're real links back into
+    the dashboard. %>
+<% dashboard = local_assigns.fetch(:dashboard, false) %>
+<% to_dash = ->(hash) { dashboard ? hash : "#{root_path}#{hash}" } %>
+<% caret = '<svg class="caret" viewBox="0 0 10 7" aria-hidden="true"><path d="M1 1.5 L5 5.5 L9 1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'.html_safe %>
+<div class="topbar"><div class="in">
+  <a class="brand" href="<%= to_dash.("#/") %>">Rough estimates</a>
+  <div class="menu acctmenu" id="acctmenu" data-open="false" data-active="<%= controller_name == "account" %>">
+    <button type="button" class="mtrigger" id="acctbtn" aria-expanded="false" aria-haspopup="true" aria-controls="acctdrop">
+      Account <%= caret %>
+    </button>
+    <div class="dropdown acct-dropdown" id="acctdrop" role="menu">
+      <div class="acct-email"><%= current_user.email %></div>
+      <a role="menuitem" href="<%= account_path %>" <%= 'aria-current="page"'.html_safe if controller_name == "account" %>>Account &amp; API keys</a>
+      <%= button_to "Log out", logout_path, method: :delete, class: "acct-logout", form: { style: "display:contents" } %>
+    </div>
+  </div>
+  <nav class="navlinks" id="nav">
+    <a href="<%= to_dash.("#/") %>">Overview</a>
+    <div class="menu" id="clubmenu" data-open="false">
+      <button type="button" class="mtrigger" id="clubbtn" aria-expanded="false" aria-haspopup="true" aria-controls="clubdrop">
+        Clubs <%= caret %>
+      </button>
+      <div class="dropdown" id="clubdrop" role="menu">
+        <% unless dashboard %>
+          <% topbar_clubs.each do |c| %>
+            <a role="menuitem" href="<%= to_dash.("#/club/#{ERB::Util.url_encode(c[:club])}") %>">
+              <i style="background:<%= c[:color] %>"></i><%= c[:club] %>
+              <span class="n"><%= number_with_delimiter(c[:shots]) %> shots · <%= c[:sessions] %>×</span></a>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <a href="<%= to_dash.("#/data") %>">Raw data</a>
+    <a href="<%= trackman_sessions_path %>" <%= 'aria-current="page"'.html_safe if controller_name == "trackman_sessions" %>>Sessions</a>
+  </nav>
+</div></div>
+
+<script>
+/* Topbar dropdowns (Clubs, Account): hover on a mouse, tap on touch,
+   keyboard-reachable either way; only one open at a time. The dashboard
+   also uses initMenu for its own Clubs menu once it has filled it. */
+const ALL_MENUS=[];
+function initMenu(menu,btn,drop){
+  let pinned=false, closeT=null;
+  function openMenu(){
+    ALL_MENUS.forEach(m=>{if(m!==ctl)m.close();});
+    clearTimeout(closeT);menu.dataset.open='true';btn.setAttribute('aria-expanded','true');
+  }
+  function closeMenu(){clearTimeout(closeT);pinned=false;menu.dataset.open='false';btn.setAttribute('aria-expanded','false');}
+  function scheduleClose(){clearTimeout(closeT);closeT=setTimeout(()=>{if(!pinned)closeMenu();},280);}
+  menu.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')openMenu();});
+  menu.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')clearTimeout(closeT);});
+  menu.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pinned)scheduleClose();});
+  btn.addEventListener('click',()=>{pinned=!pinned;pinned?openMenu():closeMenu();});
+  menu.addEventListener('focusin',openMenu);
+  menu.addEventListener('focusout',()=>{
+    setTimeout(()=>{if(!pinned&&!menu.contains(document.activeElement))closeMenu();},0);});
+  drop.addEventListener('click',closeMenu);
+  document.addEventListener('click',e=>{if(!menu.contains(e.target))closeMenu();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&menu.dataset.open==='true'){closeMenu();btn.focus();}});
+  const ctl={open:openMenu,close:closeMenu};
+  ALL_MENUS.push(ctl);
+  return ctl;
+}
+initMenu(document.getElementById('acctmenu'),document.getElementById('acctbtn'),document.getElementById('acctdrop'));
+<% unless dashboard %>
+initMenu(document.getElementById('clubmenu'),document.getElementById('clubbtn'),document.getElementById('clubdrop'));
+<% end %>
+</script>

@@ -1,0 +1,105 @@
+/* Shared by every signed-in page: the dashboard (analysis/index, which has
+   no layout) and the application layout. The color palette, and the
+   topbar with its Clubs / Account dropdowns (app/views/shared/_topbar). */
+
+:root{
+  color-scheme: light;
+  --page:#f2f5ee; --surface:#fbfcf9; --surface-2:#f6f8f2; --sunk:#eceff0;
+  --ink:#12150f; --ink-2:#4e5247; --ink-muted:#82867a;
+  --rule:#dfe3d8; --rule-2:#c8cdbe; --ring:rgba(18,21,15,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s5:#8659c9; --s6:#0d8f8f; --s7:#d84b8a; --s8:#6b7a1f;
+  --brand:#2d6a3e; --ball:#fbfcf9;
+  --pos:#2a78d6; --neg:#d03b3b;
+  --good:#0ca30c; --crit:#d03b3b;
+  --flag-bg:#fdf4e3; --flag-rule:#e0a93a;
+  --r0:#9ec5f4; --r1:#86b6ef; --r2:#6da7ec; --r3:#5598e7; --r4:#3987e5;
+  --r5:#2a78d6; --r6:#256abf; --r7:#1c5cab; --r8:#184f95; --r9:#104281;
+}
+@media (prefers-color-scheme: dark){ :root:where(:not([data-theme="light"])){
+  color-scheme: dark;
+  --page:#0d0f0b; --surface:#191c15; --surface-2:#1f2219; --sunk:#131610;
+  --ink:#f4f6ef; --ink-2:#c2c7b6; --ink-muted:#8a8f80;
+  --rule:#2b2f25; --rule-2:#3c4134; --ring:rgba(244,246,239,.12);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#a685e0; --s6:#2fb8b8; --s7:#e8709f; --s8:#96a83a;
+  --brand:#6ab573; --ball:#e9eee2;
+  --pos:#3987e5; --neg:#e66767;
+  --good:#0ca30c; --crit:#d03b3b;
+  --flag-bg:#241d0e; --flag-rule:#8a6a1d;
+  --r0:#1c5cab; --r1:#256abf; --r2:#2a78d6; --r3:#3987e5; --r4:#5598e7;
+  --r5:#6da7ec; --r6:#86b6ef; --r7:#9ec5f4; --r8:#b7d3f6; --r9:#cde2fb;
+}}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0f0b; --surface:#191c15; --surface-2:#1f2219; --sunk:#131610;
+  --ink:#f4f6ef; --ink-2:#c2c7b6; --ink-muted:#8a8f80;
+  --rule:#2b2f25; --rule-2:#3c4134; --ring:rgba(244,246,239,.12);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#a685e0; --s6:#2fb8b8; --s7:#e8709f; --s8:#96a83a;
+  --brand:#6ab573; --ball:#e9eee2;
+  --pos:#3987e5; --neg:#e66767;
+  --good:#0ca30c; --crit:#d03b3b;
+  --flag-bg:#241d0e; --flag-rule:#8a6a1d;
+  --r0:#1c5cab; --r1:#256abf; --r2:#2a78d6; --r3:#3987e5; --r4:#5598e7;
+  --r5:#6da7ec; --r6:#86b6ef; --r7:#9ec5f4; --r8:#b7d3f6; --r9:#cde2fb;
+}
+
+/* ---------- chrome ---------- */
+.topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--page) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--rule-2)}
+.topbar .in{max-width:1180px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:800;font-size:19px;
+  letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;white-space:nowrap}
+.navlinks{display:flex;gap:4px 4px;align-items:center;flex-wrap:wrap;flex-basis:100%}
+.navlinks a{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:500;font-size:15px;
+  text-decoration:none;color:var(--ink-2);padding:5px 11px;border-radius:5px;white-space:nowrap}
+.navlinks a:hover{background:var(--sunk)}
+.navlinks a[aria-current="page"]{background:var(--ink);color:var(--page);font-weight:700}
+.navlinks a:focus-visible,.brand:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.navlinks{position:relative}
+.menu{position:relative}
+.mtrigger{font-family:"Alegreya Sans","Optima","Gill Sans",sans-serif;font-weight:500;font-size:15px;
+  color:var(--ink-2);background:transparent;border:0;white-space:nowrap;
+  padding:5px 11px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.mtrigger:hover{background:var(--sunk)}
+.mtrigger:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.menu[data-active="true"] .mtrigger{background:var(--ink);color:var(--page);font-weight:700}
+.mtrigger .caret{width:8px;height:8px;transition:transform .13s;flex:none}
+.menu[data-open="true"] .mtrigger .caret{transform:rotate(180deg)}
+.dropdown{position:absolute;top:calc(100% + 7px);left:0;min-width:216px;background:var(--surface);
+  border:1px solid var(--rule-2);border-radius:8px;box-shadow:0 10px 28px var(--ring);
+  padding:5px;display:none;z-index:45}
+/* bridges the visual gap so the pointer never leaves the menu on its way down */
+.dropdown::before{content:"";position:absolute;left:0;right:0;top:-11px;height:11px}
+.menu[data-open="true"] .dropdown{display:block}
+.dropdown a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:5px;
+  text-decoration:none;color:var(--ink-2);font-size:13.5px;white-space:nowrap}
+.dropdown a:hover{background:var(--surface-2);color:var(--ink)}
+.dropdown a[aria-current="page"]{background:var(--sunk);color:var(--ink);font-weight:600}
+.dropdown a i{width:4px;height:17px;border-radius:2px;flex:none}
+.dropdown a .n{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-muted)}
+/* below ~700px the topbar itself wraps onto multiple rows, so the dropdown can no longer
+   anchor to its small trigger button (it'd overflow the trigger's own edge, see mtrigger) --
+   pin it to the viewport's edges instead. top stays the inherited calc(100% + 7px): .topbar's
+   own backdrop-filter makes IT (not the viewport) the containing block for this fixed element,
+   so that percentage already resolves against the topbar's height, landing right below it
+   however tall the (now possibly multi-row) topbar is -- no JS positioning needed. */
+@media (max-width:700px){.dropdown{position:fixed;left:12px;right:12px;min-width:0}}
+/* opposite the brand, top-right of the identity row -- navlinks (the actual page tabs) wraps
+   to its own full-width row below via flex-basis:100% above, so this stays put regardless of
+   how many nav links there are or how narrow the screen gets. */
+.acctmenu{margin-left:auto}
+.acctmenu .dropdown{left:auto;right:0}
+.acct-dropdown{min-width:200px}
+.acct-email{padding:6px 10px 8px;margin-bottom:3px;border-bottom:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-dropdown form{display:contents}
+.acct-logout{display:block;width:100%;text-align:left;font:inherit;font-family:"IBM Plex Sans",sans-serif;
+  font-size:13.5px;color:var(--ink-2);background:none;border:0;padding:7px 10px;border-radius:5px;cursor:pointer}
+.acct-logout:hover{background:var(--surface-2);color:var(--ink)}
+
+/* the application layout styles plain links blue; the topbar's stay ink */
+.topbar a{color:inherit}
+.topbar .brand{color:var(--ink)}
