@@ -23,11 +23,7 @@
   <body>
     <%= render "shared/topbar" if logged_in? %>
 
-    <div class="flash">
-      <% flash.each do |type, message| %>
-        <div class="<%= type == "notice" ? "notice" : "alert" %>"><%= message %></div>
-      <% end %>
-    </div>
+    <%= render "shared/flash" %>
 
     <%= yield %>
 

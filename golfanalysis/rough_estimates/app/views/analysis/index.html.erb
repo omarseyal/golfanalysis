@@ -179,23 +179,10 @@ td a:hover{text-decoration:underline}
   .subhead{flex-direction:column;align-items:flex-start;gap:2px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.flashbar{max-width:1180px;margin:10px auto 0;padding:0 24px}
-.flashbar .notice,.flashbar .alert{font-family:"IBM Plex Sans",sans-serif;font-size:13px;
-  padding:8px 12px;border-radius:6px;margin-bottom:8px}
-.flashbar .notice{background:var(--flag-bg);color:var(--ink)}
-.flashbar .alert{background:rgba(208,59,59,.12);color:var(--crit)}
-@media (max-width:700px){.flashbar{padding-left:16px;padding-right:16px}}
 </style>
 
-<% if flash.any? %>
-  <div class="flashbar">
-    <% flash.each do |type, message| %>
-      <div class="<%= type == "notice" ? "notice" : "alert" %>"><%= message %></div>
-    <% end %>
-  </div>
-<% end %>
-
 <%= render "shared/topbar", dashboard: true %>
+<%= render "shared/flash" %>
 
 <div class="shell" id="app"></div>
 <div id="tip" role="status" aria-live="polite"></div>

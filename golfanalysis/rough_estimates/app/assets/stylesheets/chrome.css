@@ -103,3 +103,13 @@
 /* the application layout styles plain links blue; the topbar's stay ink */
 .topbar a{color:inherit}
 .topbar .brand{color:var(--ink)}
+
+/* Notices and alerts (shared/_flash), just under the topbar on every page.
+   --flash-width/--flash-gutter match the page's content column: the
+   dashboard's .shell by default; application.css overrides for .wrap. */
+.flashbar{max-width:var(--flash-width,1180px);margin:12px auto 0;padding:0 var(--flash-gutter,24px)}
+.flashbar .notice,.flashbar .alert{font-family:"IBM Plex Sans",sans-serif;font-size:13px;
+  padding:8px 12px;border-radius:6px;margin-bottom:8px}
+.flashbar .notice{background:var(--flag-bg);color:var(--ink)}
+.flashbar .alert{background:rgba(208,59,59,.12);color:var(--crit)}
+@media (max-width:700px){.flashbar{padding-left:16px;padding-right:16px}}

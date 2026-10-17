@@ -1,0 +1,10 @@
+<%# Notices and alerts, right under the topbar on every page. Styled in
+    chrome.css; each layout sets --flash-width/--flash-gutter to line up
+    with its own content column. %>
+<% if flash.any? %>
+  <div class="flashbar">
+    <% flash.each do |type, message| %>
+      <div class="<%= type == "notice" ? "notice" : "alert" %>"><%= message %></div>
+    <% end %>
+  </div>
+<% end %>
